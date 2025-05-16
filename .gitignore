@@ -1,0 +1,12 @@
+# .gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.vscode/
+.idea/
+venv/
+dist/
+build/
+*.pb2.py
