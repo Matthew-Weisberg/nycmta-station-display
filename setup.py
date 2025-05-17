@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="mta_train_tracker",
+    name="nycmta-train-tracker",
     version="0.1.0",
     description="A Python library for tracking MTA train status and real-time data.",
     author="Matthew Weisberg",
-    author_email="youremail@example.com",
     url="https://github.com/Matthew-Weisberg/nycmta-train-tracker",
+    license="MIT",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     include_package_data=True,
