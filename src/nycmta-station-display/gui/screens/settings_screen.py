@@ -11,17 +11,24 @@ class SettingsScreen(BaseScreen):
         self.WIDTH, self.HEIGHT = screen.get_size()
 
         # Layout constants
-        self.BANNER_HEIGHT = int(self.HEIGHT * 0.08)
+        self.BANNER_HEIGHT = int(self.HEIGHT * 0.10)
         self.SPACER = int(self.HEIGHT * 0.05)
+        self.BUTTON_HEIGHT = int(self.HEIGHT * 0.10)
+        self.BUTTON_WIDTH = self.WIDTH
 
         # Colors
         self.SCREEN_BG = (0, 0, 0)
         self.BANNER_BG = (40, 40, 40)
         self.BORDER_COLOR = (255, 255, 255)
         self.BORDER_THICKNESS = 2
+        self.BUTTON_BG_COLOR = (20, 20, 20)
+        self.BUTTON_BORDER_COLOR = (200, 200, 200)
+        self.BUTTON_BORDER_THICKNESS = 20
+        self.BUTTON_BORDER_SIDES = ["top", "bottom"]
 
         # Fonts
         self.banner_font = pygame.font.SysFont("Helvetica", int(self.BANNER_HEIGHT * 0.6))
+        self.button_font = pygame.font.SysFont("Helvetica", int(self.BUTTON_HEIGHT * 0.5))
 
         # Load and scale images
         self.load_images()
@@ -37,6 +44,24 @@ class SettingsScreen(BaseScreen):
             icon=None  # must be a pygame.Surface
         )
 
+        # Settings Buttons (initial visible set)
+        self.settings_labels = ["Wi-Fi Settings", "Display Options", "Audio Settings", "System Info"]
+        self.setting_buttons = []
+        for i, label in enumerate(self.settings_labels):
+            btn = Button(
+                text=label,
+                pos=(self.SPACER, self.BANNER_HEIGHT + self.SPACER + i * (self.BUTTON_HEIGHT + self.SPACER)),
+                size=(self.BUTTON_WIDTH - 2 * self.SPACER, self.BUTTON_HEIGHT),
+                font=self.button_font,
+                bg_color=self.BUTTON_BG_COLOR,
+                text_color=(255, 255, 255),
+                hover_color=(90, 90, 90),
+                border_color=(200,200,200),
+                border_thickness=2,
+                border_sides=self.BUTTON_BORDER_SIDES
+            )
+            self.setting_buttons.append(btn)
+
     def load_images(self):
         ""
 
@@ -46,7 +71,7 @@ class SettingsScreen(BaseScreen):
         return None
 
     def update(self):
-        ""
+        pass
 
     def render(self):
         self.screen.fill(self.SCREEN_BG)
@@ -64,3 +89,7 @@ class SettingsScreen(BaseScreen):
             right_text="",
             right_button=self.home_button
         )
+
+        for button in self.setting_buttons:
+            button.hovered = button.rect.collidepoint(pygame.mouse.get_pos())
+            button.draw(self.screen)

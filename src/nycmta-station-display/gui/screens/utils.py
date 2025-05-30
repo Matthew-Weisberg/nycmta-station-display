@@ -21,11 +21,15 @@ class Button:
     #               text_color (tuple[int])   – color of the text in RGB
     #               hover_color (tuple[int])  – background color when mouse hovers over
     #               icon (pygame.Surface)     – optional icon image to display (centered)
+    #               border_color (tuple[int]) – RGB color of the border (default: None = no border)
+    #               border_thickness (int)    – thickness of the border lines (default: 0)
+    #               border_sides (list[str])  – sides with borders: "top", "bottom", "left", "right"
     #   Output:     A button object that can be drawn to screen and respond to mouse/touch events
     #   Description: A reusable UI component that renders a clickable button with hover effect
     #                and optional icon support. Works with both mouse and touch screens.
     # -----------------------------------------------------------------------------------------------------------------
-    def __init__(self, text, pos, size, font, bg_color, text_color, hover_color, icon=None):
+    def __init__(self, text, pos, size, font, bg_color, text_color, hover_color, icon=None,
+                 border_color=None, border_thickness=0, border_sides=None):
         self.text = text
         self.pos = pos
         self.size = size
@@ -33,12 +37,16 @@ class Button:
         self.bg_color = bg_color
         self.text_color = text_color
         self.hover_color = hover_color
-        self.icon = icon  # pygame.Surface or None
+        self.icon = icon
+
+        self.border_color = border_color
+        self.border_thickness = border_thickness
+        self.border_sides = border_sides or []
 
         self.rect = pygame.Rect(pos, size)
         self.hovered = False
 
-        # Render text surface only if text is provided
+        # Render text
         if self.text:
             self.text_surf = self.font.render(self.text, True, self.text_color)
             self.text_rect = self.text_surf.get_rect(center=self.rect.center)
@@ -46,22 +54,38 @@ class Button:
             self.text_surf = None
             self.text_rect = None
 
-        # Scale icon if larger than button
+        # Scale icon
         if self.icon:
             self.icon = pygame.transform.smoothscale(self.icon, (min(size), min(size)))
             self.icon_rect = self.icon.get_rect(center=self.rect.center)
         else:
             self.icon_rect = None
 
-    def draw(self, surface):
+    def draw(self, screen):
+        # Draw button background
         color = self.hover_color if self.hovered else self.bg_color
-        pygame.draw.rect(surface, color, self.rect, border_radius=0)
+        pygame.draw.rect(screen, color, self.rect)
 
-        # Draw icon or text (icon takes priority)
-        if self.icon and self.icon_rect:
-            surface.blit(self.icon, self.icon_rect)
-        elif self.text_surf and self.text_rect:
-            surface.blit(self.text_surf, self.text_rect)
+        # Draw borders on specified sides
+        if self.border_color and self.border_thickness > 0:
+            x, y, w, h = self.rect
+            t = self.border_thickness
+
+            if "top" in self.border_sides:
+                pygame.draw.rect(screen, self.border_color, (x, y, w, t))
+            if "bottom" in self.border_sides:
+                pygame.draw.rect(screen, self.border_color, (x, y + h - t, w, t))
+            if "left" in self.border_sides:
+                pygame.draw.rect(screen, self.border_color, (x, y, t, h))
+            if "right" in self.border_sides:
+                pygame.draw.rect(screen, self.border_color, (x + w - t, y, t, h))
+
+        # Draw text or icon
+        if self.text_surf:
+            screen.blit(self.text_surf, self.text_rect)
+        elif self.icon and self.icon_rect:
+            screen.blit(self.icon, self.icon_rect)
+
 
     def handle_event(self, event):
         # Compatible with touch screens since taps also generate MOUSEBUTTONDOWN events

@@ -25,4 +25,3 @@ class ScreenManager:
             self.current_screen = HomeScreen(self.screen, self.frame_rate)
         elif screen_name == "SettingsScreen":
             self.current_screen = SettingsScreen(self.screen, self.frame_rate)
-        # Add more screen types here as needed
