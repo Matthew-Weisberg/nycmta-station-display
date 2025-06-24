@@ -1,8 +1,6 @@
 import requests
 import gtfs_realtime_pb2
 
-
-
 FEED_URL = 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-g'
 
 # Fetch the data

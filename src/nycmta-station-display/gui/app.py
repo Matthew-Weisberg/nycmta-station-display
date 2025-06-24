@@ -1,7 +1,7 @@
 import pygame
 from screens.screen_manager import ScreenManager
 
-WIDTH, HEIGHT = 1600, 900
+WIDTH, HEIGHT = 800, 450 
 FRAME_RATE = 60
 
 def main():

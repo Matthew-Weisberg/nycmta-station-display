@@ -23,13 +23,21 @@ class HomeScreen(BaseScreen):
         self.BORDER_THICKNESS = 2
 
         # Train speed
-        self.TRAIN_SPEED = 4.0  # seconds to cross screen
+        self.TRAIN_SPEED = 10.0  # seconds to cross screen
 
         # Fonts
         self.banner_font = pygame.font.SysFont("Helvetica", int(self.BANNER_HEIGHT * 0.6))
 
         # Load and scale images
         self.load_images()
+
+        # --- Larger text behind trains ---
+        self.train_time_font_size = int(self.train_height * 0.6)
+        self.train_time_font = pygame.font.SysFont("Helvetica", self.train_time_font_size)
+
+        # Text to show behind trains
+        self.train1_text = self.train_time_font.render("Express A", True, (255, 255, 255))
+        self.train2_text = self.train_time_font.render("Express B", True, (255, 255, 255))
 
         # Train positions
         self.train1_x = -self.train_width
@@ -97,5 +105,26 @@ class HomeScreen(BaseScreen):
         train1_y = self.BANNER_HEIGHT + self.SPACER
         train2_y = train1_y + self.train_height + self.SPACER
 
+        # --- Background rectangles behind text ---
+        bg_rect_height = int(1.5 * self.SPACER + self.train_height)
+
+        # Placeholder y-values; adjust as needed
+        rect1_y = self.BANNER_HEIGHT + self.BORDER_THICKNESS
+        rect2_y = rect1_y + self.train_height + 1.5 * self.SPACER
+        
+        train1_rect = pygame.Rect(self.train1_x, rect1_y, self.train_width + self.WIDTH, bg_rect_height)
+        train2_rect = pygame.Rect(0, rect2_y, self.train2_x + self.train_width, bg_rect_height)
+
+        # --- Draw text ---
+        train1_text_rect = self.train1_text.get_rect(center=(self.WIDTH // 2, train1_y + self.train_height // 2))
+        train2_text_rect = self.train2_text.get_rect(center=(self.WIDTH // 2, train2_y + self.train_height // 2))
+
+        self.screen.blit(self.train1_text, train1_text_rect)
+        self.screen.blit(self.train2_text, train2_text_rect)
+        
+        pygame.draw.rect(self.screen, self.SCREEN_BG, train1_rect)
+        pygame.draw.rect(self.screen, self.SCREEN_BG, train2_rect)
+
+        # --- Draw trains on top ---
         self.screen.blit(self.train_flipped, (self.train1_x, train1_y))
         self.screen.blit(self.train_image, (self.train2_x, train2_y))
