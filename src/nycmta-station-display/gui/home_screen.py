@@ -1,7 +1,7 @@
 import pygame
 import os
 from datetime import datetime
-from gui.gui_utils import crop_transparent_border, draw_banner, Button
+from gui.gui_utils import crop_transparent_border, draw_banner, draw_train_time, Button
 from gui.base_screen import BaseScreen  # You’ll create this base class
 
 class HomeScreen(BaseScreen):
@@ -64,18 +64,38 @@ class HomeScreen(BaseScreen):
         )
 
     def load_images(self):
+        # Load train image 
         assets_dir = os.path.join(os.path.dirname(__file__), "../../../assets/images")
-        image_path = os.path.join(assets_dir, "r211.png")
-        train_image = pygame.image.load(image_path).convert_alpha()
+        train_path = os.path.join(assets_dir, "r211.png")
+        train_image = pygame.image.load(train_path).convert_alpha()
         train_image = crop_transparent_border(train_image)
 
+        # Resize to right height
         orig_width, orig_height = train_image.get_size()
         scale_factor = self.TRAIN_HEIGHT / orig_height
         target_width = int(orig_width * scale_factor)
-
         self.train_image = pygame.transform.smoothscale(train_image, (target_width, self.TRAIN_HEIGHT))
+       
+        # Create a flipped version of the train to run in the opposite direction
         self.train_flipped = pygame.transform.flip(self.train_image, True, False)
         self.train_width, self.train_height = self.train_image.get_size()
+
+        # Load subway bullets
+        bullets_dir = os.path.join(assets_dir, "subway_bullets")
+        self.bullets = {}  # Dictionary to store bullet images
+
+        if os.path.exists(bullets_dir):
+            for filename in os.listdir(bullets_dir):
+                if filename.endswith(".png"):
+                    bullet_name = os.path.splitext(filename)[0]
+                    bullet_path = os.path.join(bullets_dir, filename)
+                    try:
+                        bullet_image = pygame.image.load(bullet_path).convert_alpha()
+                        self.bullets[bullet_name] = bullet_image
+                    except pygame.error as e:
+                        print(f"Failed to load {filename}: {e}")
+        else:
+            print(f"Subway bullets folder not found: {bullets_dir}")
 
     def handle_event(self, event):
         if self.settings_button.handle_event(event):

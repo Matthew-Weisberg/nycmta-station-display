@@ -199,3 +199,38 @@ def draw_banner(screen,
         right_button.text_rect = right_button.text_surf.get_rect(center=right_button.rect.center)
         right_button.draw(screen)
 
+import pygame
+
+def draw_train_time(screen,
+                    screen_width,
+                    row_height,
+                    curr_train,
+                    destination,
+                    minutes_to_arrival):
+    
+    WHITE = (255, 255, 255)
+
+    # Initialize fonts (adjust sizes as needed)
+    font_train = pygame.font.SysFont("helvetica", int(row_height * 0.8))
+    font_dest = pygame.font.SysFont("helvetica", int(row_height * 0.65))
+    font_minute = pygame.font.SysFont("helvetica", int(row_height * 0.7))
+    font_label = pygame.font.SysFont("helvetica", int(row_height * 0.5))
+
+    # Render text surfaces
+    train_surf = font_train.render(f"{curr_train}.", True, WHITE)
+    dest_surf = font_dest.render(f"{destination}", True, WHITE)
+    minute_surf = font_minute.render(f"{minutes_to_arrival}", True, WHITE)
+    label_surf = font_label.render("min", True, WHITE)
+
+    # Calculate vertical position (bottom-aligned)
+    y_bottom = row_height
+    train_rect = train_surf.get_rect(topleft=(int(screen_width * 0.02), y_bottom - train_surf.get_height()))
+    dest_rect = dest_surf.get_rect(midleft=(int(screen_width * 0.3), y_bottom - dest_surf.get_height()))
+    minute_rect = minute_surf.get_rect(midleft=(int(screen_width * 0.8), y_bottom - minute_surf.get_height()))
+    label_rect = label_surf.get_rect(midleft=(int(screen_width * 0.9), y_bottom - label_surf.get_height()))
+
+    # Blit to screen
+    screen.blit(train_surf, train_rect)
+    screen.blit(dest_surf, dest_rect)
+    screen.blit(minute_surf, minute_rect)
+    screen.blit(label_surf, label_rect)
