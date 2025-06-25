@@ -1,15 +1,25 @@
 import pygame
 import os
 from datetime import datetime
-from screens.utils import crop_transparent_border, draw_banner, Button
-from screens.base_screen import BaseScreen  # You’ll create this base class
+from gui.gui_utils import crop_transparent_border, draw_banner, Button
+from gui.base_screen import BaseScreen  # You’ll create this base class
 
 class HomeScreen(BaseScreen):
-    def __init__(self, screen, frame_rate):
+    def __init__(self, 
+                 screen, 
+                 frame_rate,
+                 train_feed,
+                 config):
         super().__init__(screen)
         self.screen = screen
         self.frame_rate = frame_rate
         self.WIDTH, self.HEIGHT = screen.get_size()
+
+        self.train_feed = train_feed
+        self.num_trains = 3
+        self.curr_train = 1
+        self.north_text  = ""
+        self.south_text = ""
 
         # Layout constants
         self.BANNER_HEIGHT = int(self.HEIGHT * 0.10)
@@ -23,7 +33,10 @@ class HomeScreen(BaseScreen):
         self.BORDER_THICKNESS = 2
 
         # Train speed
-        self.TRAIN_SPEED = 10.0  # seconds to cross screen
+        self.first_pass = True
+        self.counter = 0
+        self.TRAIN_SPEED = 3.0  # seconds to cross screen
+        self.TRAIN_WAIT_TIME = 3.0 # seconds before next train
 
         # Fonts
         self.banner_font = pygame.font.SysFont("Helvetica", int(self.BANNER_HEIGHT * 0.6))
@@ -32,12 +45,8 @@ class HomeScreen(BaseScreen):
         self.load_images()
 
         # --- Larger text behind trains ---
-        self.train_time_font_size = int(self.train_height * 0.6)
+        self.train_time_font_size = int(self.train_height * 0.45)
         self.train_time_font = pygame.font.SysFont("Helvetica", self.train_time_font_size)
-
-        # Text to show behind trains
-        self.train1_text = self.train_time_font.render("Express A", True, (255, 255, 255))
-        self.train2_text = self.train_time_font.render("Express B", True, (255, 255, 255))
 
         # Train positions
         self.train1_x = -self.train_width
@@ -55,7 +64,7 @@ class HomeScreen(BaseScreen):
         )
 
     def load_images(self):
-        assets_dir = os.path.join(os.path.dirname(__file__), "../../../../assets/images")
+        assets_dir = os.path.join(os.path.dirname(__file__), "../../../assets/images")
         image_path = os.path.join(assets_dir, "r211.png")
         train_image = pygame.image.load(image_path).convert_alpha()
         train_image = crop_transparent_border(train_image)
@@ -74,15 +83,46 @@ class HomeScreen(BaseScreen):
         return None
 
     def update(self):
-        pixels_per_frame = (self.WIDTH + 2 * self.train_width) / (self.TRAIN_SPEED * self.frame_rate)
+
+        pixels_per_frame = (self.WIDTH + 2 * self.train_width) // (self.TRAIN_SPEED * self.frame_rate)
+        waiting_frames = self.TRAIN_WAIT_TIME * self.frame_rate
         self.train1_x += pixels_per_frame
         self.train2_x -= pixels_per_frame
 
-        if self.train1_x > self.WIDTH:
-            self.train1_x = -self.train_width
+        now = datetime.now().timestamp()
 
-        if self.train2_x < -self.train_width:
-            self.train2_x = self.WIDTH
+        for train in self.train_feed.get('N', []):
+            if train.get('order') == self.curr_train:
+                north_bound_arrival = train['arrival_time']
+                north_bound_destination = "Court Sq"
+                north_bound_min = int((north_bound_arrival - now) / 60)
+
+        for train in self.train_feed.get('S', []):
+            if train.get('order') == self.curr_train:
+                south_bound_arrival = train['arrival_time']
+                south_bound_destination = "Church Av"
+                south_bound_min = int((south_bound_arrival - now) / 60)
+
+        if self.train1_x <= 0 and self.train1_x + self.train_width > self.WIDTH:
+            self.north_text = f"{self.curr_train}. {north_bound_destination:<12} {north_bound_min:>3} min"
+            self.south_text = f"{self.curr_train}. {south_bound_destination:<12} {south_bound_min:>3} min"
+
+        # Text to show behind trains
+        self.train1_text = self.train_time_font.render(self.north_text, True, (255, 255, 255))
+        self.train2_text = self.train_time_font.render(self.south_text, True, (255, 255, 255))
+
+        if self.train1_x > self.WIDTH:
+            if self.first_pass:
+                self.first_pass = False
+            self.counter += 1
+            if self.counter >= waiting_frames:
+                self.train1_x = -self.train_width
+                self.train2_x = self.WIDTH
+                self.counter = 0  
+                self.curr_train += 1
+                if self.curr_train > self.num_trains:
+                    self.curr_train = 1 
+
 
     def render(self):
         self.screen.fill(self.SCREEN_BG)
@@ -112,8 +152,12 @@ class HomeScreen(BaseScreen):
         rect1_y = self.BANNER_HEIGHT + self.BORDER_THICKNESS
         rect2_y = rect1_y + self.train_height + 1.5 * self.SPACER
         
-        train1_rect = pygame.Rect(self.train1_x, rect1_y, self.train_width + self.WIDTH, bg_rect_height)
-        train2_rect = pygame.Rect(0, rect2_y, self.train2_x + self.train_width, bg_rect_height)
+        if self.first_pass:
+            train1_rect = pygame.Rect(self.train1_x, rect1_y, self.train_width + self.WIDTH, bg_rect_height)
+            train2_rect = pygame.Rect(0, rect2_y, self.train2_x + self.train_width, bg_rect_height)
+        else:
+            train1_rect = pygame.Rect(self.train1_x, rect1_y, self.train_width, bg_rect_height)
+            train2_rect = pygame.Rect(self.train2_x, rect2_y, self.train_width, bg_rect_height)
 
         # --- Draw text ---
         train1_text_rect = self.train1_text.get_rect(center=(self.WIDTH // 2, train1_y + self.train_height // 2))

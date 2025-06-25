@@ -1,0 +1,9 @@
+feed_url = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-g"
+
+[station]
+# MTA station ID without direction suffix (e.g., G35)
+id = "G35"
+
+# Approximate coordinates for Brooklyn, NY (Fort Greene area, for example)
+latitude = 40.6861
+longitude = -73.9800

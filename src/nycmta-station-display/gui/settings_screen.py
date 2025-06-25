@@ -1,7 +1,7 @@
 import pygame
 import os
-from screens.utils import crop_transparent_border, draw_banner, Button
-from screens.base_screen import BaseScreen  # You’ll create this base class
+from gui.gui_utils import crop_transparent_border, draw_banner, Button
+from gui.base_screen import BaseScreen  # You’ll create this base class
 
 class SettingsScreen(BaseScreen):
     def __init__(self, screen, frame_rate):

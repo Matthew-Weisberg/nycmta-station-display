@@ -86,7 +86,6 @@ class Button:
         elif self.icon and self.icon_rect:
             screen.blit(self.icon, self.icon_rect)
 
-
     def handle_event(self, event):
         # Compatible with touch screens since taps also generate MOUSEBUTTONDOWN events
         if event.type == pygame.MOUSEMOTION:

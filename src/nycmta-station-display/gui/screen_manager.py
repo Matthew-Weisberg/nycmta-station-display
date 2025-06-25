@@ -1,12 +1,12 @@
 # screen_manager.py
-from screens.home_screen import HomeScreen
-from screens.settings_screen import SettingsScreen
+from gui.home_screen import HomeScreen
+from gui.settings_screen import SettingsScreen
 
 class ScreenManager:
-    def __init__(self, screen, frame_rate):
+    def __init__(self, screen, frame_rate, train_feed, config):
         self.screen = screen
         self.frame_rate = frame_rate
-        self.current_screen = HomeScreen(screen, frame_rate)
+        self.current_screen = HomeScreen(screen, frame_rate, train_feed, config)
 
     def handle_event(self, event):
         result = self.current_screen.handle_event(event)
@@ -22,6 +22,6 @@ class ScreenManager:
 
     def change_screen(self, screen_name):
         if screen_name == "HomeScreen":
-            self.current_screen = HomeScreen(self.screen, self.frame_rate)
+            self.current_screen = HomeScreen(self.screen, self.frame_rate, )
         elif screen_name == "SettingsScreen":
             self.current_screen = SettingsScreen(self.screen, self.frame_rate)

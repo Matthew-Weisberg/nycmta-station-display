@@ -1,42 +1,66 @@
-import requests
-import gtfs_realtime_pb2
-
-FEED_URL = 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-g'
-
-# Fetch the data
-response = requests.get(FEED_URL)
-
-feed = gtfs_realtime_pb2.FeedMessage()
-feed.ParseFromString(response.content)
-
+import toml
+import os
 import time
+import pygame
+from collections import defaultdict
+from utils import *
+from gui.screen_manager import ScreenManager
 
-station_id = 'G35N'  # Replace with your station stop ID
-upcoming_trains = []
+WIDTH, HEIGHT = 800, 450 
+FRAME_RATE = 60
 
-for entity in feed.entity:
-    if not entity.HasField('trip_update'):
-        continue
+def load_config():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    # Build the full path to the config file
+    config_path = os.path.join(base_dir, 'config', 'config.toml')
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Missing config file at {config_path}")
+    return toml.load(config_path)
 
-    for stu in entity.trip_update.stop_time_update:
-        if stu.stop_id == station_id:
-            arrival_time = None
-            if stu.HasField('arrival') and stu.arrival.HasField('time'):
-                arrival_time = stu.arrival.time
-            if stu.HasField('departure') and stu.departure.HasField('time'):
-                arrival_time = stu.departure.time
+def main():
+    config = load_config()
+    station_id = config['station']['id']
+    lat = config['station']['latitude']
+    lon = config['station']['longitude']
+    feed_url = config['feed_url']
 
-            if arrival_time:
-                upcoming_trains.append({
-                    'trip_id': entity.trip_update.trip.trip_id,
-                    'route_id': entity.trip_update.trip.route_id,
-                    'arrival_time': arrival_time
-                })
+    print(f"Checking trains for station {station_id} at lat={lat}, lon={lon}")
 
-# Sort by arrival time
-upcoming_trains.sort(key=lambda x: x['arrival_time'])
+    feed = fetch_feed(feed_url)
+    train_feed = extract_trains_for_station(feed, station_id)
 
-# Print upcoming times
-for train in upcoming_trains:
-    print(f"Route {train['route_id']} - Arriving at {time.strftime('%I:%M:%S %p', time.localtime(train['arrival_time']))}")
+    for direction, entries in train_feed.items():
+        print(f"\nDirection {direction}:")
+        for train in entries:
+            formatted_time = time.strftime('%I:%M:%S %p', time.localtime(train['arrival_time']))
+            print(f"  Route {train['route_id']} - Trip {train['trip_id']} - Arrival: {formatted_time}")
 
+    pygame.init()
+
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("MTA + Weather Display")
+    clock = pygame.time.Clock()
+    frame_rate = 60
+
+    manager = ScreenManager(screen, 
+                            frame_rate,
+                            train_feed,
+                            config)
+    running = True
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            else:
+                manager.handle_event(event)
+
+        manager.update()
+        manager.render()
+        pygame.display.flip()
+        clock.tick(frame_rate)
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    main()
