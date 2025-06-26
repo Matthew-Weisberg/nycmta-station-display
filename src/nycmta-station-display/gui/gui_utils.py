@@ -199,38 +199,58 @@ def draw_banner(screen,
         right_button.text_rect = right_button.text_surf.get_rect(center=right_button.rect.center)
         right_button.draw(screen)
 
-import pygame
-
 def draw_train_time(screen,
                     screen_width,
-                    row_height,
+                    train_height,
+                    text_y_center,
                     curr_train,
                     destination,
-                    minutes_to_arrival):
-    
+                    minutes_to_arrival,
+                    bullet,
+                    bullets_dict):  # Pass the preloaded bullet images dictionary here
+
     WHITE = (255, 255, 255)
 
     # Initialize fonts (adjust sizes as needed)
-    font_train = pygame.font.SysFont("helvetica", int(row_height * 0.8))
-    font_dest = pygame.font.SysFont("helvetica", int(row_height * 0.65))
-    font_minute = pygame.font.SysFont("helvetica", int(row_height * 0.7))
-    font_label = pygame.font.SysFont("helvetica", int(row_height * 0.5))
+    font_train_time = pygame.font.SysFont("helvetica", int(train_height * 0.40), bold=True)
+    font_minute = pygame.font.SysFont("helvetica", int(train_height * 0.25), bold=True)
 
     # Render text surfaces
-    train_surf = font_train.render(f"{curr_train}.", True, WHITE)
-    dest_surf = font_dest.render(f"{destination}", True, WHITE)
-    minute_surf = font_minute.render(f"{minutes_to_arrival}", True, WHITE)
-    label_surf = font_label.render("min", True, WHITE)
+    train_surf = font_train_time.render(f"{curr_train}.", True, WHITE)
+    dest_surf = font_train_time.render(f"{destination}", True, WHITE)
+    minute_surf = font_train_time.render(f"{minutes_to_arrival}", True, WHITE)
+    label_surf = font_minute.render("min", True, WHITE)
 
-    # Calculate vertical position (bottom-aligned)
-    y_bottom = row_height
-    train_rect = train_surf.get_rect(topleft=(int(screen_width * 0.02), y_bottom - train_surf.get_height()))
-    dest_rect = dest_surf.get_rect(midleft=(int(screen_width * 0.3), y_bottom - dest_surf.get_height()))
-    minute_rect = minute_surf.get_rect(midleft=(int(screen_width * 0.8), y_bottom - minute_surf.get_height()))
-    label_rect = label_surf.get_rect(midleft=(int(screen_width * 0.9), y_bottom - label_surf.get_height()))
+    # Align text vertically centered at y = text_y_center
+    train_rect = train_surf.get_rect(midleft=(int(screen_width * 0.03), text_y_center))
+    dest_rect = dest_surf.get_rect(midleft=(int(screen_width * 0.21), text_y_center))
 
-    # Blit to screen
+    # Right-align minute text inside its box (fixed width region ending at 80%)
+    minute_rect = minute_surf.get_rect(midright=(int(screen_width * 0.855), text_y_center))
+
+    # Align label (min) so that its bottom matches minute_surf
+    label_rect = label_surf.get_rect(midleft=(int(screen_width * 0.87), 0))  # Temporary y=0
+    label_rect.bottom = minute_rect.bottom - 6
+
+    # Blit text surfaces
     screen.blit(train_surf, train_rect)
     screen.blit(dest_surf, dest_rect)
     screen.blit(minute_surf, minute_rect)
     screen.blit(label_surf, label_rect)
+
+    # Draw bullet image (if it exists)
+    additional_scale_factor = 0.8
+    bullet_key = bullet.upper()
+    if bullet_key in bullets_dict:
+        bullet_image = bullets_dict[bullet_key]
+
+        # Scale bullet image to match train_surf height
+        desired_height = additional_scale_factor * train_surf.get_height()
+        scale_factor = desired_height / bullet_image.get_height()
+        new_width = int(bullet_image.get_width() * scale_factor)
+        scaled_bullet = pygame.transform.smoothscale(bullet_image, (new_width, int(desired_height)))
+
+        # Align bullet image just right of train text
+        bullet_rect = scaled_bullet.get_rect(midleft=(train_rect.right + 10, train_rect.centery))
+        screen.blit(scaled_bullet, bullet_rect)
+

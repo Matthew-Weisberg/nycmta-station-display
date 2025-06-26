@@ -18,8 +18,13 @@ class HomeScreen(BaseScreen):
         self.train_feed = train_feed
         self.num_trains = 3
         self.curr_train = 1
-        self.north_text  = ""
-        self.south_text = ""
+        self.old_train = 0
+        self.north_text  = {'train_num': "",
+                            'bullet': "",
+                            'arrival_time': "",
+                            'destination': "",
+                            'minutes': ""}
+        self.south_text = self.north_text
 
         # Layout constants
         self.BANNER_HEIGHT = int(self.HEIGHT * 0.10)
@@ -81,7 +86,7 @@ class HomeScreen(BaseScreen):
         self.train_width, self.train_height = self.train_image.get_size()
 
         # Load subway bullets
-        bullets_dir = os.path.join(assets_dir, "subway_bullets")
+        bullets_dir = os.path.join(assets_dir, "bullets")
         self.bullets = {}  # Dictionary to store bullet images
 
         if os.path.exists(bullets_dir):
@@ -91,7 +96,7 @@ class HomeScreen(BaseScreen):
                     bullet_path = os.path.join(bullets_dir, filename)
                     try:
                         bullet_image = pygame.image.load(bullet_path).convert_alpha()
-                        self.bullets[bullet_name] = bullet_image
+                        self.bullets[bullet_name.upper()] = bullet_image
                     except pygame.error as e:
                         print(f"Failed to load {filename}: {e}")
         else:
@@ -108,28 +113,27 @@ class HomeScreen(BaseScreen):
         waiting_frames = self.TRAIN_WAIT_TIME * self.frame_rate
         self.train1_x += pixels_per_frame
         self.train2_x -= pixels_per_frame
-
         now = datetime.now().timestamp()
 
-        for train in self.train_feed.get('N', []):
-            if train.get('order') == self.curr_train:
-                north_bound_arrival = train['arrival_time']
-                north_bound_destination = "Court Sq"
-                north_bound_min = int((north_bound_arrival - now) / 60)
+        if self.old_train != self.curr_train and self.train1_x < 0 and self.train1_x + self.train_width > self.WIDTH:
+            
+            self.old_train = self.curr_train
 
-        for train in self.train_feed.get('S', []):
-            if train.get('order') == self.curr_train:
-                south_bound_arrival = train['arrival_time']
-                south_bound_destination = "Church Av"
-                south_bound_min = int((south_bound_arrival - now) / 60)
+            for train in self.train_feed.get('N', []):
+                if train.get('order') == self.curr_train:
+                    self.north_text = {'train_num': self.curr_train,
+                                       'bullet': train['route_id'],
+                                       'arrival_time': train['arrival_time'],
+                                       'destination': 'Court Sq',
+                                       'minutes': int((train['arrival_time'] - now) / 60)}
 
-        if self.train1_x <= 0 and self.train1_x + self.train_width > self.WIDTH:
-            self.north_text = f"{self.curr_train}. {north_bound_destination:<12} {north_bound_min:>3} min"
-            self.south_text = f"{self.curr_train}. {south_bound_destination:<12} {south_bound_min:>3} min"
-
-        # Text to show behind trains
-        self.train1_text = self.train_time_font.render(self.north_text, True, (255, 255, 255))
-        self.train2_text = self.train_time_font.render(self.south_text, True, (255, 255, 255))
+            for train in self.train_feed.get('S', []):
+                if train.get('order') == self.curr_train:
+                    self.south_text = {'train_num': self.curr_train,
+                                       'bullet': train['route_id'],
+                                       'arrival_time': train['arrival_time'],
+                                       'destination': 'Court Sq',
+                                       'minutes': int((train['arrival_time'] - now) / 60)}
 
         if self.train1_x > self.WIDTH:
             if self.first_pass:
@@ -179,12 +183,25 @@ class HomeScreen(BaseScreen):
             train1_rect = pygame.Rect(self.train1_x, rect1_y, self.train_width, bg_rect_height)
             train2_rect = pygame.Rect(self.train2_x, rect2_y, self.train_width, bg_rect_height)
 
-        # --- Draw text ---
-        train1_text_rect = self.train1_text.get_rect(center=(self.WIDTH // 2, train1_y + self.train_height // 2))
-        train2_text_rect = self.train2_text.get_rect(center=(self.WIDTH // 2, train2_y + self.train_height // 2))
-
-        self.screen.blit(self.train1_text, train1_text_rect)
-        self.screen.blit(self.train2_text, train2_text_rect)
+        draw_train_time(screen=self.screen,
+                        screen_width=self.WIDTH,
+                        train_height=self.train_height,
+                        text_y_center= train1_y + self.train_height // 2,
+                        curr_train=self.north_text['train_num'],
+                        destination=self.north_text['destination'],
+                        minutes_to_arrival=self.north_text['minutes'],
+                        bullet=self.north_text['bullet'],
+                        bullets_dict=self.bullets)
+        
+        draw_train_time(screen=self.screen,
+                        screen_width=self.WIDTH,
+                        train_height=self.train_height,
+                        text_y_center= train2_y + self.train_height // 2,
+                        curr_train=self.south_text['train_num'],
+                        destination=self.south_text['destination'],
+                        minutes_to_arrival=self.south_text['minutes'],
+                        bullet=self.south_text['bullet'],
+                        bullets_dict=self.bullets)
         
         pygame.draw.rect(self.screen, self.SCREEN_BG, train1_rect)
         pygame.draw.rect(self.screen, self.SCREEN_BG, train2_rect)
