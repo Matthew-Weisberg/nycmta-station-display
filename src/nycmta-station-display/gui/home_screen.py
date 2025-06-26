@@ -132,7 +132,7 @@ class HomeScreen(BaseScreen):
                     self.south_text = {'train_num': self.curr_train,
                                        'bullet': train['route_id'],
                                        'arrival_time': train['arrival_time'],
-                                       'destination': 'Court Sq',
+                                       'destination': 'Church Av',
                                        'minutes': int((train['arrival_time'] - now) / 60)}
 
         if self.train1_x > self.WIDTH:
