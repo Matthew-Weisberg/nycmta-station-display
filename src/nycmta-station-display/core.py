@@ -6,7 +6,7 @@ from collections import defaultdict
 from utils import *
 from gui.screen_manager import ScreenManager
 
-WIDTH, HEIGHT = 800, 450 
+WIDTH, HEIGHT = 800, 480 
 FRAME_RATE = 60
 
 def load_config():

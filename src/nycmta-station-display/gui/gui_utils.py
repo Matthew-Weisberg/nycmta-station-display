@@ -27,8 +27,8 @@ class Button:
     #   Description: A reusable UI component that renders a clickable button with hover effect
     #                and optional icon support. Works with both mouse and touch screens.
     # -----------------------------------------------------------------------------------------------------------------
-    def __init__(self, text, pos, size, font, bg_color, text_color, hover_color, icon=None,
-                 border_color=None, border_thickness=0, border_sides=None):
+    def __init__(self, text, pos, size, font, bg_color, text_color, hover_color,
+                 icon=None, border_color=None, border_thickness=0, border_sides=None):
         self.text = text
         self.pos = pos
         self.size = size
@@ -45,10 +45,15 @@ class Button:
         self.rect = pygame.Rect(pos, size)
         self.hovered = False
 
-        # Render text
         if self.text:
-            self.text_surf = self.font.render(self.text, True, self.text_color)
-            self.text_rect = self.text_surf.get_rect(center=self.rect.center)
+            # Check for special flag to left-align
+            if isinstance(self.text, str) and self.text.startswith("[left]"):
+                clean_text = self.text.replace("[left]", "", 1)
+                self.text_surf = self.font.render(clean_text, True, self.text_color)
+                self.text_rect = self.text_surf.get_rect(midleft=(self.rect.left + 10, self.rect.centery))
+            else:
+                self.text_surf = self.font.render(self.text, True, self.text_color)
+                self.text_rect = self.text_surf.get_rect(center=self.rect.center)
         else:
             self.text_surf = None
             self.text_rect = None
@@ -195,7 +200,7 @@ def draw_banner(screen,
     # Render right-side button (if present)
     if right_button:
         right_button.rect.topleft = (screen_width - banner_height, 0)
-        right_button.text_rect = right_button.text_surf.get_rect(center=right_button.rect.center)
+        #right_button.text_rect = right_button.text_surf.get_rect(center=right_button.rect.center)
         right_button.draw(screen)
 
 def draw_train_time(screen,
@@ -253,3 +258,17 @@ def draw_train_time(screen,
         bullet_rect = scaled_bullet.get_rect(midleft=(train_rect.right + 10, train_rect.centery))
         screen.blit(scaled_bullet, bullet_rect)
 
+def add_transparent_border(image, padding):
+    """Adds a transparent border around the given image."""
+    width, height = image.get_size()
+    new_width = width + 2 * padding
+    new_height = height + 2 * padding
+
+    # Create a new surface with transparency
+    new_image = pygame.Surface((new_width, new_height), pygame.SRCALPHA)
+    new_image.fill((0, 0, 0, 0))  # Fully transparent
+
+    # Blit the original image in the center
+    new_image.blit(image, (padding, padding))
+
+    return new_image

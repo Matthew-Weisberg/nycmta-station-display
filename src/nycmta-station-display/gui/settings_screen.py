@@ -1,7 +1,7 @@
 import pygame
 import os
-from gui.gui_utils import crop_transparent_border, draw_banner, Button
-from gui.base_screen import BaseScreen  # You’ll create this base class
+from gui.gui_utils import crop_transparent_border, draw_banner, add_transparent_border, Button
+from gui.base_screen import BaseScreen 
 
 class SettingsScreen(BaseScreen):
     def __init__(self, screen, frame_rate):
@@ -11,7 +11,7 @@ class SettingsScreen(BaseScreen):
         self.WIDTH, self.HEIGHT = screen.get_size()
 
         # Layout constants
-        self.BANNER_HEIGHT = int(self.HEIGHT * 0.10)
+        self.BANNER_HEIGHT = int(self.HEIGHT * 0.12)
         self.SPACER = int(self.HEIGHT * 0.05)
         self.BUTTON_HEIGHT = int(self.HEIGHT * 0.10)
         self.BUTTON_WIDTH = self.WIDTH
@@ -26,26 +26,28 @@ class SettingsScreen(BaseScreen):
         self.BUTTON_BORDER_THICKNESS = 20
         self.BUTTON_BORDER_SIDES = ["top", "bottom"]
 
+        self.ICON_TRANSPARENT_BORDER = 180
+
         # Fonts
         self.banner_font = pygame.font.SysFont("Helvetica", int(self.BANNER_HEIGHT * 0.6))
-        self.button_font = pygame.font.SysFont("Helvetica", int(self.BUTTON_HEIGHT * 0.5))
+        self.button_font = pygame.font.SysFont("Helvetica", int(self.BUTTON_HEIGHT * 0.5), bold=True)
 
         # Load and scale images
         self.load_images()
 
         self.home_button = Button(
-            text="S",  # icon-only button
+            text=None,  # icon-only button
             pos=(self.WIDTH - self.BANNER_HEIGHT, 0),  # top-right corner
             size=(self.BANNER_HEIGHT,self.BANNER_HEIGHT),    # square button
-            font=self.banner_font,
-            bg_color=(200, 30, 30),
+            font=None,
+            bg_color=(150, 150, 150),
             text_color=(255, 255, 255),
-            hover_color=(50, 50, 50),
-            icon=None  # must be a pygame.Surface
+            hover_color=(100, 100, 100),
+            icon=self.home_icon  # must be a pygame.Surface
         )
 
         # Settings Buttons (initial visible set)
-        self.settings_labels = ["Wi-Fi Settings", "Display Options", "Audio Settings", "System Info"]
+        self.settings_labels = ["Choose Subway Station", "Display Options", "Audio Settings", "System Info"]
         self.setting_buttons = []
         for i, label in enumerate(self.settings_labels):
             btn = Button(
@@ -63,11 +65,18 @@ class SettingsScreen(BaseScreen):
             self.setting_buttons.append(btn)
 
     def load_images(self):
-        ""
+        assets_dir = os.path.join(os.path.dirname(__file__), "../../../assets/images")
+        # Load icon for banner
+        icons_dir = os.path.join(assets_dir, "icons")
+        home_path = os.path.join(icons_dir, "home.png")
+        self.home_icon = pygame.image.load(home_path).convert_alpha()
+        self.home_icon = add_transparent_border(self.home_icon, self.ICON_TRANSPARENT_BORDER)
 
     def handle_event(self, event):
         if self.home_button.handle_event(event):
             return "goto:HomeScreen"
+        if self.setting_buttons[0].handle_event(event):
+            return "goto:BulletSelectScreen"
         return None
 
     def update(self):

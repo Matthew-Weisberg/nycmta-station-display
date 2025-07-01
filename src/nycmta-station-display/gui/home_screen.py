@@ -1,8 +1,8 @@
 import pygame
 import os
 from datetime import datetime
-from gui.gui_utils import crop_transparent_border, draw_banner, draw_train_time, Button
-from gui.base_screen import BaseScreen  # You’ll create this base class
+from gui.gui_utils import crop_transparent_border, draw_banner, draw_train_time, add_transparent_border, Button
+from gui.base_screen import BaseScreen 
 
 class HomeScreen(BaseScreen):
     def __init__(self, 
@@ -27,7 +27,7 @@ class HomeScreen(BaseScreen):
         self.south_text = self.north_text
 
         # Layout constants
-        self.BANNER_HEIGHT = int(self.HEIGHT * 0.10)
+        self.BANNER_HEIGHT = int(self.HEIGHT * 0.12)
         self.SPACER = int(self.HEIGHT * 0.05)
         self.TRAIN_HEIGHT = (self.HEIGHT - self.BANNER_HEIGHT - 3 * self.SPACER) // 2
 
@@ -37,10 +37,12 @@ class HomeScreen(BaseScreen):
         self.BORDER_COLOR = (255, 255, 255)
         self.BORDER_THICKNESS = 2
 
+        self.ICON_TRANSPARENT_BORDER = 150
+
         # Train speed
         self.first_pass = True
         self.counter = 0
-        self.TRAIN_SPEED = 3.0  # seconds to cross screen
+        self.TRAIN_SPEED = 2.0  # seconds to cross screen
         self.TRAIN_WAIT_TIME = 3.0 # seconds before next train
 
         # Fonts
@@ -58,19 +60,26 @@ class HomeScreen(BaseScreen):
         self.train2_x = self.WIDTH
 
         self.settings_button = Button(
-            text="S",  # icon-only button
+            text=None,  # icon-only button
             pos=(self.WIDTH - self.BANNER_HEIGHT, 0),  # top-right corner
             size=(self.BANNER_HEIGHT,self.BANNER_HEIGHT),    # square button
-            font=self.banner_font,
-            bg_color=(200, 30, 30),
+            font=None,
+            bg_color=(150, 150, 150),
             text_color=(255, 255, 255),
-            hover_color=(50, 50, 50),
-            icon=None  # must be a pygame.Surface
+            hover_color=(100, 100, 100),
+            icon=self.gear_icon  # must be a pygame.Surface
         )
 
     def load_images(self):
-        # Load train image 
         assets_dir = os.path.join(os.path.dirname(__file__), "../../../assets/images")
+
+        # Load icon for banner
+        icons_dir = os.path.join(assets_dir, "icons")
+        gear_path = os.path.join(icons_dir, "gear.png")
+        self.gear_icon = pygame.image.load(gear_path).convert_alpha()
+        self.gear_icon = add_transparent_border(self.gear_icon, self.ICON_TRANSPARENT_BORDER)
+
+        # Load train image 
         train_path = os.path.join(assets_dir, "r211.png")
         train_image = pygame.image.load(train_path).convert_alpha()
         train_image = crop_transparent_border(train_image)
@@ -116,7 +125,6 @@ class HomeScreen(BaseScreen):
         now = datetime.now().timestamp()
 
         if self.old_train != self.curr_train and self.train1_x < 0 and self.train1_x + self.train_width > self.WIDTH:
-            
             self.old_train = self.curr_train
 
             for train in self.train_feed.get('N', []):
@@ -152,6 +160,7 @@ class HomeScreen(BaseScreen):
         self.screen.fill(self.SCREEN_BG)
 
         now_str = datetime.now().strftime("%A, %B %d   %I:%M %p")
+
         draw_banner(
             screen=self.screen,
             screen_width=self.WIDTH,
@@ -196,7 +205,7 @@ class HomeScreen(BaseScreen):
         draw_train_time(screen=self.screen,
                         screen_width=self.WIDTH,
                         train_height=self.train_height,
-                        text_y_center= train2_y + self.train_height // 2,
+                        text_y_center=train2_y + self.train_height // 2,
                         curr_train=self.south_text['train_num'],
                         destination=self.south_text['destination'],
                         minutes_to_arrival=self.south_text['minutes'],
