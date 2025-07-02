@@ -1,7 +1,7 @@
 import pygame
 import os
 from gui.gui_utils import crop_transparent_border, draw_banner, add_transparent_border, Button
-from gui.base_screen import BaseScreen  # You’ll create this base class
+from gui.base_screen import BaseScreen 
 
 class BulletSelectScreen(BaseScreen):
     def __init__(self, screen, frame_rate):
@@ -120,7 +120,7 @@ class BulletSelectScreen(BaseScreen):
             for filename in os.listdir(bullets_dir):
                 if filename.endswith(".png"):
                     bullet_name = os.path.splitext(filename)[0]
-                    if not bullet_name.endswith('d'):
+                    if not bullet_name.endswith('d') or bullet_name.startswith('d'):
                         bullet_path = os.path.join(bullets_dir, filename)
                         try:
                             bullet_image = pygame.image.load(bullet_path).convert_alpha()

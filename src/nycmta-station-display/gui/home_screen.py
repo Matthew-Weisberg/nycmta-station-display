@@ -155,7 +155,6 @@ class HomeScreen(BaseScreen):
                 if self.curr_train > self.num_trains:
                     self.curr_train = 1 
 
-
     def render(self):
         self.screen.fill(self.SCREEN_BG)
 
@@ -170,8 +169,8 @@ class HomeScreen(BaseScreen):
             banner_border_color=self.BORDER_COLOR,
             banner_border_thickness=self.BORDER_THICKNESS,
             left_text=now_str,
-            center_text="test",
-            right_text="right text",
+            center_text="",
+            right_text="",
             right_button=self.settings_button
         )
 

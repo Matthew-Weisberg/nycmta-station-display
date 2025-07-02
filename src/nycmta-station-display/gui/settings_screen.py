@@ -47,7 +47,7 @@ class SettingsScreen(BaseScreen):
         )
 
         # Settings Buttons (initial visible set)
-        self.settings_labels = ["Choose Subway Station", "Display Options", "Audio Settings", "System Info"]
+        self.settings_labels = ["Choose Subway Station", "Config Settings", "Placeholder2", "Placeholder3"]
         self.setting_buttons = []
         for i, label in enumerate(self.settings_labels):
             btn = Button(

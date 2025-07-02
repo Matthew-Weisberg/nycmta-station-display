@@ -17,8 +17,12 @@ class ScreenManager:
         if isinstance(result, str) and result.startswith("goto:"):
             screen_name = result.split("goto:")[1]
             self.change_screen(screen_name)
+        elif isinstance(result, list) and result[0] == "config":
+            return result
 
-    def update(self):
+    def update(self, config, train_feed):
+        self.config = config
+        self.train_feed = train_feed
         self.current_screen.update()
 
     def render(self):
@@ -33,4 +37,4 @@ class ScreenManager:
             self.current_screen = BulletSelectScreen(self.screen, self.frame_rate)
         elif screen_name.startswith("StationSelectScreen"):
             route_id = screen_name.split("StationSelectScreen:")[1]
-            self.current_screen = StationSelectScreen(self.screen, self.frame_rate, route_id)
+            self.current_screen = StationSelectScreen(self.screen, self.frame_rate, route_id, self.config)
