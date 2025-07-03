@@ -6,16 +6,18 @@ from collections import defaultdict, Counter
 from gui.gui_utils import crop_transparent_border, draw_banner, draw_train_time, add_transparent_border, get_day_type, Button
 from gui.base_screen import BaseScreen 
 
-class HomeScreen(BaseScreen):
+class HomeScreen2(BaseScreen):
     def __init__(self, 
                  screen, 
                  frame_rate,
                  train_feed,
                  config):
+        
         super().__init__(screen)
         self.screen = screen
         self.frame_rate = frame_rate
         self.WIDTH, self.HEIGHT = screen.get_size()
+        self.config = config
 
         self.train_feed = train_feed
         self.num_trains = 3
@@ -30,8 +32,12 @@ class HomeScreen(BaseScreen):
 
         # Layout constants
         self.BANNER_HEIGHT = int(self.HEIGHT * 0.12)
-        self.SPACER = int(self.HEIGHT * 0.05)
-        self.TRAIN_HEIGHT = (self.HEIGHT - self.BANNER_HEIGHT - 3 * self.SPACER) // 2
+        self.SPACER = int(self.HEIGHT * 0.04)
+        self.STATION_NAME_HEIGHT = int(self.HEIGHT * 0.09)
+        self.ALERTS_HEIGHT = int(self.HEIGHT * 0.06)
+        self.TRAIN_HEIGHT = (self.HEIGHT - (self.BANNER_HEIGHT + self.STATION_NAME_HEIGHT + self.ALERTS_HEIGHT + 5 * self.SPACER)) // 2
+
+        self.WEATHER_SPLIT = 0.32
 
         # Colors
         self.SCREEN_BG = (0, 0, 0)
@@ -47,8 +53,14 @@ class HomeScreen(BaseScreen):
         self.TRAIN_SPEED = 2.0  # seconds to cross screen
         self.TRAIN_WAIT_TIME = 3.0 # seconds before next train
 
+        self.divider = int(self.WEATHER_SPLIT * self.WIDTH)
+        self.train_screen_width = self.WIDTH - self.divider
+        self.weather_background_rect = pygame.Rect(0, self.BANNER_HEIGHT + self.BORDER_THICKNESS, self.divider, self.HEIGHT - (self.BANNER_HEIGHT + self.BORDER_THICKNESS))
+
+
         # Fonts
-        self.banner_font = pygame.font.SysFont("Helvetica", int(self.BANNER_HEIGHT * 0.6))
+        self.banner_font = pygame.font.SysFont("Helvetica", int(self.BANNER_HEIGHT * 0.7), bold=False)
+        self.station_name_font = pygame.font.SysFont("Helvetica", int(self.STATION_NAME_HEIGHT * 0.99), bold=True)
 
         # Load and scale images
         self.load_images()
@@ -60,7 +72,7 @@ class HomeScreen(BaseScreen):
         self.train_time_font = pygame.font.SysFont("Helvetica", self.train_time_font_size)
 
         # Train positions
-        self.train1_x = -self.train_width
+        self.train1_x = -self.train_width + self.divider
         self.train2_x = self.WIDTH
 
         self.settings_button = Button(
@@ -68,7 +80,7 @@ class HomeScreen(BaseScreen):
             pos=(self.WIDTH - self.BANNER_HEIGHT, 0),  # top-right corner
             size=(self.BANNER_HEIGHT,self.BANNER_HEIGHT),    # square button
             font=None,
-            bg_color=(150, 150, 150),
+            bg_color=(120, 150, 220),
             text_color=(255, 255, 255),
             hover_color=(100, 100, 100),
             icon=self.gear_icon  # must be a pygame.Surface
@@ -114,6 +126,7 @@ class HomeScreen(BaseScreen):
                         print(f"Failed to load {filename}: {e}")
         else:
             print(f"Subway bullets folder not found: {bullets_dir}")
+            
 
     def load_trips(self):
         assets_dir = os.path.join(os.path.dirname(__file__), "../../../assets/")
@@ -154,13 +167,13 @@ class HomeScreen(BaseScreen):
 
     def update(self):
 
-        pixels_per_frame = (self.WIDTH + 2 * self.train_width) // (self.TRAIN_SPEED * self.frame_rate)
+        pixels_per_frame = (self.train_screen_width + 2 * self.train_width) // (self.TRAIN_SPEED * self.frame_rate)
         waiting_frames = self.TRAIN_WAIT_TIME * self.frame_rate
         self.train1_x += pixels_per_frame
         self.train2_x -= pixels_per_frame
         now = datetime.now().timestamp()
 
-        if self.old_train != self.curr_train and self.train1_x < 0 and self.train1_x + self.train_width > self.WIDTH:
+        if self.old_train != self.curr_train and self.train1_x < self.divider and self.train1_x + self.train_width > self.WIDTH:
             self.old_train = self.curr_train
 
             for train in self.train_feed.get('N', []):
@@ -209,7 +222,7 @@ class HomeScreen(BaseScreen):
                 self.first_pass = False
             self.counter += 1
             if self.counter >= waiting_frames:
-                self.train1_x = -self.train_width
+                self.train1_x = -self.train_width + self.divider
                 self.train2_x = self.WIDTH
                 self.counter = 0  
                 self.curr_train += 1
@@ -219,7 +232,7 @@ class HomeScreen(BaseScreen):
     def render(self):
         self.screen.fill(self.SCREEN_BG)
 
-        now_str = datetime.now().strftime("%A, %B %d   %I:%M %p")
+        now_str = datetime.now().strftime("%A, %B %d     %I:%M %p")
 
         draw_banner(
             screen=self.screen,
@@ -229,21 +242,24 @@ class HomeScreen(BaseScreen):
             banner_background_color=self.BANNER_BG,
             banner_border_color=self.BORDER_COLOR,
             banner_border_thickness=self.BORDER_THICKNESS,
-            left_text=now_str,
-            center_text="",
+            left_text="",
+            center_text=now_str,
             right_text="",
             right_button=self.settings_button
         )
 
-        train1_y = self.BANNER_HEIGHT + self.SPACER
+        train1_y = self.BANNER_HEIGHT + self.STATION_NAME_HEIGHT + 2 * self.SPACER
         train2_y = train1_y + self.train_height + self.SPACER
 
         # --- Background rectangles behind text ---
-        bg_rect_height = int(1.5 * self.SPACER + self.train_height)
+        bg_rect_height = self.train_height
 
         # Placeholder y-values; adjust as needed
-        rect1_y = self.BANNER_HEIGHT + self.BORDER_THICKNESS
-        rect2_y = rect1_y + self.train_height + 1.5 * self.SPACER
+        rect1_y = self.BANNER_HEIGHT + self.BORDER_THICKNESS + self.STATION_NAME_HEIGHT + 2 * self.SPACER
+        rect2_y = rect1_y + self.train_height + self.SPACER
+
+        station_name_surface = self.station_name_font.render(self.config['station']['name'], True, (255, 255, 255))
+        self.screen.blit(station_name_surface, (self.divider + self.SPACER, self.BANNER_HEIGHT + self.BORDER_THICKNESS + self.SPACER))
         
         if self.first_pass:
             train1_rect = pygame.Rect(self.train1_x, rect1_y, self.train_width + self.WIDTH, bg_rect_height)
@@ -260,7 +276,8 @@ class HomeScreen(BaseScreen):
                         destination=self.north_text['destination'],
                         minutes_to_arrival=self.north_text['minutes'],
                         bullet=self.north_text['bullet'],
-                        bullets_dict=self.bullets)
+                        bullets_dict=self.bullets,
+                        divider=self.divider)
         
         draw_train_time(screen=self.screen,
                         screen_width=self.WIDTH,
@@ -270,7 +287,8 @@ class HomeScreen(BaseScreen):
                         destination=self.south_text['destination'],
                         minutes_to_arrival=self.south_text['minutes'],
                         bullet=self.south_text['bullet'],
-                        bullets_dict=self.bullets)
+                        bullets_dict=self.bullets,
+                        divider=self.divider)
         
         pygame.draw.rect(self.screen, self.SCREEN_BG, train1_rect)
         pygame.draw.rect(self.screen, self.SCREEN_BG, train2_rect)
@@ -278,3 +296,6 @@ class HomeScreen(BaseScreen):
         # --- Draw trains on top ---
         self.screen.blit(self.train_flipped, (self.train1_x, train1_y))
         self.screen.blit(self.train_image, (self.train2_x, train2_y))
+
+        pygame.draw.rect(self.screen, self.SCREEN_BG, self.weather_background_rect)
+        pygame.draw.line(self.screen, self.BORDER_COLOR, (self.divider, self.BANNER_HEIGHT + self.BORDER_THICKNESS), (self.divider, self.HEIGHT), 1)

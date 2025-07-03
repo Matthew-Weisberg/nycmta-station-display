@@ -6,6 +6,7 @@ transfers = []
 
 [station]
 id = "A24"
-transfer = []
+name = "59 St-Columbus Circle"
+transfers = []
 latitude = 40.6861
 longitude = -73.98

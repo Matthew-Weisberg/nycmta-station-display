@@ -164,28 +164,10 @@ def draw_banner(screen,
 
     # Adjust width for right button
     button_width = banner_height if right_button else 0
-    max_width = screen_width - button_width - 40  # padding
-
-    # Font scaling loop
-    font_size = banner_font.get_height()
-    font_name = banner_font.get_name() if hasattr(banner_font, 'get_name') else None
-    font_path = None
-    if font_name:
-        try:
-            banner_font = pygame.font.SysFont(font_name, font_size)
-        except:
-            pass
-
-    while font_size > 10:
-        font = pygame.font.Font(font_path, font_size) if font_path else pygame.font.SysFont(font_name, font_size)
-        left_surface = font.render(left_text, True, WHITE)
-        center_surface = font.render(center_text, True, WHITE)
-        right_surface = font.render(right_text, True, WHITE)
-
-        total_width = left_surface.get_width() + center_surface.get_width() + right_surface.get_width() + 60
-        if total_width <= max_width:
-            break
-        font_size -= 1
+    
+    left_surface = banner_font.render(left_text, True, WHITE)
+    center_surface = banner_font.render(center_text, True, WHITE)
+    right_surface = banner_font.render(right_text, True, WHITE)
 
     y_pos = (banner_height - center_surface.get_height()) // 2
 
@@ -210,13 +192,16 @@ def draw_train_time(screen,
                     destination,
                     minutes_to_arrival,
                     bullet,
-                    bullets_dict):  # Pass the preloaded bullet images dictionary here
+                    bullets_dict,
+                    divider):  # Pass the preloaded bullet images dictionary here
 
     WHITE = (255, 255, 255)
+    train_screen_width = screen_width - divider
+
 
     # Initialize fonts (adjust sizes as needed)
-    font_train_time = pygame.font.SysFont("helvetica", int(train_height * 0.27), bold=True)
-    font_minute = pygame.font.SysFont("helvetica", int(train_height * 0.18), bold=True)
+    font_train_time = pygame.font.SysFont("helvetica", int(train_height * 0.25), bold=True)
+    font_minute = pygame.font.SysFont("helvetica", int(train_height * 0.19), bold=True)
 
     # Render text surfaces
     train_surf = font_train_time.render(f"{curr_train}.", True, WHITE)
@@ -224,14 +209,14 @@ def draw_train_time(screen,
     minute_surf = font_train_time.render(f"{minutes_to_arrival}", True, WHITE)
 
     # Align text vertically centered at y = text_y_center
-    train_rect = train_surf.get_rect(midleft=(int(screen_width * 0.03), text_y_center))
-    dest_rect = dest_surf.get_rect(midleft=(int(screen_width * 0.15), text_y_center))
+    train_rect = train_surf.get_rect(midleft=(divider + int(train_screen_width * 0.03), text_y_center))
+    dest_rect = dest_surf.get_rect(midleft=(divider + int(train_screen_width * 0.205), text_y_center))
 
     # Right-align minute text inside its box (fixed width region ending at 80%)
     if minutes_to_arrival == 'now':
-            minute_rect = minute_surf.get_rect(midright=(int(screen_width * 0.89), text_y_center))
+        minute_rect = minute_surf.get_rect(midright=(divider + int(train_screen_width * 0.90), text_y_center))
     else:
-        minute_rect = minute_surf.get_rect(midright=(int(screen_width * 0.875), text_y_center))
+        minute_rect = minute_surf.get_rect(midright=(divider + int(train_screen_width * 0.86), text_y_center))
 
     # Blit text surfaces
     screen.blit(train_surf, train_rect)
@@ -241,8 +226,8 @@ def draw_train_time(screen,
     # Align label (min) so that its bottom matches minute_surf
     if not minutes_to_arrival == 'now':
         label_surf = font_minute.render("min", True, WHITE)
-        label_rect = label_surf.get_rect(midleft=(int(screen_width * 0.87), 0))  # Temporary y=0
-        label_rect.bottom = minute_rect.bottom - 7
+        label_rect = label_surf.get_rect(midleft=(divider + int(train_screen_width * 0.87), 0))  # Temporary y=0
+        label_rect.bottom = minute_rect.bottom - 2
         screen.blit(label_surf, label_rect)
 
     # Draw bullet image (if it exists)

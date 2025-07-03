@@ -80,6 +80,7 @@ class StationSelectScreen(BaseScreen):
             )
 
             btn.route_id = station["route_id"]
+            btn.station_name = station['station_name']
             btn.station_id = station["station_id"]
             btn.transfer_routes = station["transfer_routes"]
             btn.transfer_station_ids = station["transfer_station_ids"]
@@ -207,8 +208,9 @@ class StationSelectScreen(BaseScreen):
                 if button.rect.collidepoint(mouse_pos):
                     self.selected_station = button.station_id
                     return ["config", [
-                            f"station:id|{button.station_id}",
-                            f"route:id|{button.route_id}"]
+                                f"station:id|{button.station_id}",
+                                f"route:id|{button.route_id}",
+                                f"station:name|{button.station_name}"]
                             ]
 
 

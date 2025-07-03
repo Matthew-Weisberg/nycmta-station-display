@@ -1,5 +1,6 @@
 # screen_manager.py
 from gui.home_screen import HomeScreen
+from gui.home_screen2 import HomeScreen2
 from gui.settings_screen import SettingsScreen
 from gui.bullet_select_screen import BulletSelectScreen
 from gui.station_select_screen import StationSelectScreen
@@ -10,7 +11,7 @@ class ScreenManager:
         self.frame_rate = frame_rate
         self.train_feed = train_feed
         self.config = config
-        self.current_screen = HomeScreen(screen, frame_rate, train_feed, config)
+        self.current_screen = HomeScreen2(screen, frame_rate, train_feed, config)
 
     def handle_event(self, event):
         result = self.current_screen.handle_event(event)
@@ -30,7 +31,7 @@ class ScreenManager:
 
     def change_screen(self, screen_name):
         if screen_name == "HomeScreen":
-            self.current_screen = HomeScreen(self.screen, self.frame_rate, self.train_feed, self.config)
+            self.current_screen = HomeScreen2(self.screen, self.frame_rate, self.train_feed, self.config)
         elif screen_name == "SettingsScreen":
             self.current_screen = SettingsScreen(self.screen, self.frame_rate)
         elif screen_name == "BulletSelectScreen":
