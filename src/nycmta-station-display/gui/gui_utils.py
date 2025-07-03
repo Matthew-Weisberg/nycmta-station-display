@@ -1,6 +1,5 @@
 import pygame                 # Import pygame library for GUI and graphics
-import sys                    # Import sys to exit the program cleanly
-import os                     # Import os for file path handling
+import time
 from datetime import datetime # Import datetime to get current date/time
 
 # -----------------------------------------------------------------------------------------------------------------
@@ -216,35 +215,40 @@ def draw_train_time(screen,
     WHITE = (255, 255, 255)
 
     # Initialize fonts (adjust sizes as needed)
-    font_train_time = pygame.font.SysFont("helvetica", int(train_height * 0.40), bold=True)
-    font_minute = pygame.font.SysFont("helvetica", int(train_height * 0.25), bold=True)
+    font_train_time = pygame.font.SysFont("helvetica", int(train_height * 0.27), bold=True)
+    font_minute = pygame.font.SysFont("helvetica", int(train_height * 0.18), bold=True)
 
     # Render text surfaces
     train_surf = font_train_time.render(f"{curr_train}.", True, WHITE)
     dest_surf = font_train_time.render(f"{destination}", True, WHITE)
     minute_surf = font_train_time.render(f"{minutes_to_arrival}", True, WHITE)
-    label_surf = font_minute.render("min", True, WHITE)
 
     # Align text vertically centered at y = text_y_center
     train_rect = train_surf.get_rect(midleft=(int(screen_width * 0.03), text_y_center))
-    dest_rect = dest_surf.get_rect(midleft=(int(screen_width * 0.21), text_y_center))
+    dest_rect = dest_surf.get_rect(midleft=(int(screen_width * 0.15), text_y_center))
 
     # Right-align minute text inside its box (fixed width region ending at 80%)
-    minute_rect = minute_surf.get_rect(midright=(int(screen_width * 0.855), text_y_center))
-
-    # Align label (min) so that its bottom matches minute_surf
-    label_rect = label_surf.get_rect(midleft=(int(screen_width * 0.87), 0))  # Temporary y=0
-    label_rect.bottom = minute_rect.bottom - 6
+    if minutes_to_arrival == 'now':
+            minute_rect = minute_surf.get_rect(midright=(int(screen_width * 0.89), text_y_center))
+    else:
+        minute_rect = minute_surf.get_rect(midright=(int(screen_width * 0.875), text_y_center))
 
     # Blit text surfaces
     screen.blit(train_surf, train_rect)
     screen.blit(dest_surf, dest_rect)
     screen.blit(minute_surf, minute_rect)
-    screen.blit(label_surf, label_rect)
+
+    # Align label (min) so that its bottom matches minute_surf
+    if not minutes_to_arrival == 'now':
+        label_surf = font_minute.render("min", True, WHITE)
+        label_rect = label_surf.get_rect(midleft=(int(screen_width * 0.87), 0))  # Temporary y=0
+        label_rect.bottom = minute_rect.bottom - 7
+        screen.blit(label_surf, label_rect)
 
     # Draw bullet image (if it exists)
     additional_scale_factor = 0.8
     bullet_key = bullet.upper()
+
     if bullet_key in bullets_dict:
         bullet_image = bullets_dict[bullet_key]
 
@@ -272,3 +276,17 @@ def add_transparent_border(image, padding):
     new_image.blit(image, (padding, padding))
 
     return new_image
+
+def get_day_type(arrival_timestamp):
+    # Get weekday as an integer (0 = Monday, 6 = Sunday)
+    weekday_num = time.localtime(arrival_timestamp).tm_wday
+
+    # Convert to 'Weekday', 'Saturday', or 'Sunday'
+    if weekday_num == 6:
+        day_type = 'Sunday'
+    elif weekday_num == 5:
+        day_type = 'Saturday'
+    else:
+        day_type = 'Weekday'
+
+    return day_type

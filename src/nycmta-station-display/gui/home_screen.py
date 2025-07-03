@@ -1,7 +1,8 @@
 import pygame
 import os
+import csv
 from datetime import datetime
-from gui.gui_utils import crop_transparent_border, draw_banner, draw_train_time, add_transparent_border, Button
+from gui.gui_utils import crop_transparent_border, draw_banner, draw_train_time, add_transparent_border, get_day_type, Button
 from gui.base_screen import BaseScreen 
 
 class HomeScreen(BaseScreen):
@@ -51,8 +52,10 @@ class HomeScreen(BaseScreen):
         # Load and scale images
         self.load_images()
 
+        self.load_trips()
+
         # --- Larger text behind trains ---
-        self.train_time_font_size = int(self.train_height * 0.45)
+        self.train_time_font_size = int(self.train_height * 0.25)
         self.train_time_font = pygame.font.SysFont("Helvetica", self.train_time_font_size)
 
         # Train positions
@@ -111,6 +114,20 @@ class HomeScreen(BaseScreen):
         else:
             print(f"Subway bullets folder not found: {bullets_dir}")
 
+    def load_trips(self):
+        assets_dir = os.path.join(os.path.dirname(__file__), "../../../assets/")
+        gtfs_dir = os.path.join(assets_dir, "gtfs_subway")
+        trips_path = os.path.join(gtfs_dir, "trips.txt")
+
+        self.trips = []
+        with open(trips_path, newline='', encoding='utf-8') as infile:
+            reader = csv.DictReader(infile)
+
+            for row in reader:
+                if 'trip_id' in row and '_' in row['trip_id']:
+                    row['trip_id'] = row['trip_id'].split('_', 1)[1]  # Keep part after first _
+                self.trips.append(row)
+
     def handle_event(self, event):
         if self.settings_button.handle_event(event):
             return "goto:SettingsScreen"
@@ -129,19 +146,40 @@ class HomeScreen(BaseScreen):
 
             for train in self.train_feed.get('N', []):
                 if train.get('order') == self.curr_train:
+
+                    matching_trip = [
+                        trip for trip in self.trips
+                        if trip['route_id'] == train['route_id']
+                        and trip['trip_id'] == train['trip_id']
+                        and trip['service_id'] == get_day_type(train['arrival_time'])
+                    ]
+
+                    if len(matching_trip) != 1:
+                        print('Error finding train headsign!')
+
                     self.north_text = {'train_num': self.curr_train,
                                        'bullet': train['route_id'],
                                        'arrival_time': train['arrival_time'],
-                                       'destination': 'Court Sq',
-                                       'minutes': int((train['arrival_time'] - now) / 60)}
+                                       'destination': matching_trip[0]['trip_headsign'],
+                                       'minutes': int((train['arrival_time'] - now) / 60) if (train['arrival_time'] - now) > 30 else 'now'}
 
             for train in self.train_feed.get('S', []):
                 if train.get('order') == self.curr_train:
+                    matching_trip = [
+                        trip for trip in self.trips
+                        if trip['route_id'] == train['route_id']
+                        and trip['trip_id'] == train['trip_id']
+                        and trip['service_id'] == get_day_type(train['arrival_time'])
+                    ]
+
+                    if len(matching_trip) != 1:
+                        print('Error finding train headsign!')
+
                     self.south_text = {'train_num': self.curr_train,
                                        'bullet': train['route_id'],
                                        'arrival_time': train['arrival_time'],
-                                       'destination': 'Church Av',
-                                       'minutes': int((train['arrival_time'] - now) / 60)}
+                                       'destination': matching_trip[0]['trip_headsign'],
+                                       'minutes': int((train['arrival_time'] - now) / 60) if (train['arrival_time'] - now) > 30 else 'now'}
 
         if self.train1_x > self.WIDTH:
             if self.first_pass:

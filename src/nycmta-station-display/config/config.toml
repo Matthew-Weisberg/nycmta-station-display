@@ -1,11 +1,11 @@
 feed_url = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-g"
 
 [route]
-id = "G"
+id = "A"
 transfers = []
 
 [station]
-id = "G35"
+id = "A24"
 transfer = []
 latitude = 40.6861
 longitude = -73.98
