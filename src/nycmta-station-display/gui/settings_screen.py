@@ -26,7 +26,7 @@ class SettingsScreen(BaseScreen):
         self.BUTTON_BORDER_THICKNESS = 20
         self.BUTTON_BORDER_SIDES = ["top", "bottom"]
 
-        self.ICON_TRANSPARENT_BORDER = 180
+        self.ICON_TRANSPARENT_BORDER = 15
 
         # Fonts
         self.banner_font = pygame.font.SysFont("Helvetica", int(self.BANNER_HEIGHT * 0.6))
@@ -40,9 +40,9 @@ class SettingsScreen(BaseScreen):
             pos=(self.WIDTH - self.BANNER_HEIGHT, 0),  # top-right corner
             size=(self.BANNER_HEIGHT,self.BANNER_HEIGHT),    # square button
             font=None,
-            bg_color=(150, 150, 150),
+            bg_color=self.BANNER_BG,
             text_color=(255, 255, 255),
-            hover_color=(100, 100, 100),
+            hover_color=self.BANNER_BG,
             icon=self.home_icon  # must be a pygame.Surface
         )
 

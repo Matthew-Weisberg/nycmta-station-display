@@ -33,8 +33,8 @@ class StationSelectScreen(BaseScreen):
 
         self.BULLET_BORDER_PADDING = 10
 
-        self.RETURN_TRANSPARENT_BORDER = 180
-        self.CHECL_TRANSPARENT_BORDER = 60
+        self.RETURN_TRANSPARENT_BORDER = 20
+        self.CHECK_TRANSPARENT_BORDER = 60
 
         self.BULLET_SIZE_SCALAR = 0.7
         self.CHECK_SIZE_SCALAR = 1.0
@@ -53,9 +53,9 @@ class StationSelectScreen(BaseScreen):
             pos=(self.WIDTH - self.BANNER_HEIGHT, 0),
             size=(self.BANNER_HEIGHT, self.BANNER_HEIGHT),
             font=None,
-            bg_color=(150, 150, 150),
+            bg_color=self.BANNER_BG,
             text_color=(255, 255, 255),
-            hover_color=(100, 100, 100),
+            hover_color=self.BANNER_BG,
             icon=self.undo_icon
         )
 
@@ -104,28 +104,30 @@ class StationSelectScreen(BaseScreen):
         self.check_icon = pygame.transform.smoothscale(self.check_icon, (check_scale_height, check_scale_width))
 
         # Arrow Buttons
-        arrow_button_size = (self.BANNER_HEIGHT, self.PAGE_SELECT_BUTTON_HEIGHT)
+        arrow_button_size = (self.PAGE_SELECT_BUTTON_HEIGHT, self.PAGE_SELECT_BUTTON_HEIGHT)
         arrow_y = self.HEIGHT - self.PAGE_SELECT_BUTTON_HEIGHT - self.SPACER
         arrow_padding = self.SPACER
 
         self.left_button = Button(
-            text="<",
+            text=None,
             pos=(arrow_padding, arrow_y),
             size=arrow_button_size,
             font=self.banner_font,
-            bg_color=(80, 80, 80),
+            bg_color=self.SCREEN_BG,
             text_color=(255, 255, 255),
-            hover_color=(50, 50, 50)
+            hover_color=self.SCREEN_BG,
+            icon=self.arrow_icon_left
         )
 
         self.right_button = Button(
-            text=">",
+            text=None,
             pos=(self.WIDTH - arrow_padding - arrow_button_size[0], arrow_y),
             size=arrow_button_size,
             font=self.banner_font,
-            bg_color=(80, 80, 80),
+            bg_color=self.SCREEN_BG,
             text_color=(255, 255, 255),
-            hover_color=(50, 50, 50)
+            hover_color=self.SCREEN_BG,
+            icon=self.arrow_icon_right
         )
 
     def load_images(self):
@@ -140,7 +142,12 @@ class StationSelectScreen(BaseScreen):
         
         check_path = os.path.join(icons_dir, "green_check.png")
         self.check_icon = pygame.image.load(check_path).convert_alpha()
-        self.check_icon = add_transparent_border(self.check_icon, self.CHECL_TRANSPARENT_BORDER)
+        self.check_icon = add_transparent_border(self.check_icon, self.CHECK_TRANSPARENT_BORDER)
+
+        arrow_path = os.path.join(icons_dir, "arrow_subway.png")
+        self.arrow_icon_right = pygame.image.load(arrow_path).convert_alpha()
+        self.arrow_icon_left = pygame.transform.flip(self.arrow_icon_right, True, False)
+
 
         # Load subway bullets
         bullets_dir = os.path.join(assets_dir, "bullets")

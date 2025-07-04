@@ -126,16 +126,6 @@ def crop_transparent_border(image: pygame.Surface) -> pygame.Surface:
         return image
     
 def draw_banner(screen,
-                screen_width,
-                banner_height,
-                banner_font,
-                banner_background_color,
-                banner_border_color,
-                banner_border_thickness=2,
-                left_text="",
-                center_text="",
-                right_text="",
-                right_button=None):
     # -----------------------------------------------------------------------------------------------------------------
     #   Function:   draw_banner
     #   Inputs:
@@ -153,6 +143,16 @@ def draw_banner(screen,
     #   Description: Renders a top banner with optional left, center, and right-aligned text.
     #                If provided, displays a square button at the far right of the banner.
     # -----------------------------------------------------------------------------------------------------------------
+                screen_width,
+                banner_height,
+                banner_font,
+                banner_background_color,
+                banner_border_color,
+                banner_border_thickness=2,
+                left_text="",
+                center_text="",
+                right_text="",
+                right_button=None):
 
     WHITE = (255, 255, 255)
 
@@ -181,7 +181,6 @@ def draw_banner(screen,
     # Render right-side button (if present)
     if right_button:
         right_button.rect.topleft = (screen_width - banner_height, 0)
-        #right_button.text_rect = right_button.text_surf.get_rect(center=right_button.rect.center)
         right_button.draw(screen)
 
 def draw_train_time(screen,
@@ -193,59 +192,72 @@ def draw_train_time(screen,
                     minutes_to_arrival,
                     bullet,
                     bullets_dict,
-                    divider):  # Pass the preloaded bullet images dictionary here
+                    divider):
 
-    WHITE = (255, 255, 255)
+    WHITE = (255, 255, 255) if curr_train == 1 else (200, 200, 200)
+
     train_screen_width = screen_width - divider
 
+    # Base font sizes
+    font_size_main = int(train_height * 0.25)
+    font_size_minute = int(train_height * 0.19)
+    min_font_size = int(font_size_main * 0.6)
 
-    # Initialize fonts (adjust sizes as needed)
-    font_train_time = pygame.font.SysFont("helvetica", int(train_height * 0.25), bold=True)
-    font_minute = pygame.font.SysFont("helvetica", int(train_height * 0.19), bold=True)
+    font_train_time = pygame.font.SysFont("helvetica", font_size_main, bold=True)
+    font_minute = pygame.font.SysFont("helvetica", font_size_minute, bold=True)
 
-    # Render text surfaces
+    # Render train and minutes first
     train_surf = font_train_time.render(f"{curr_train}.", True, WHITE)
-    dest_surf = font_train_time.render(f"{destination}", True, WHITE)
     minute_surf = font_train_time.render(f"{minutes_to_arrival}", True, WHITE)
 
-    # Align text vertically centered at y = text_y_center
     train_rect = train_surf.get_rect(midleft=(divider + int(train_screen_width * 0.03), text_y_center))
-    dest_rect = dest_surf.get_rect(midleft=(divider + int(train_screen_width * 0.205), text_y_center))
 
-    # Right-align minute text inside its box (fixed width region ending at 80%)
     if minutes_to_arrival == 'now':
         minute_rect = minute_surf.get_rect(midright=(divider + int(train_screen_width * 0.90), text_y_center))
     else:
-        minute_rect = minute_surf.get_rect(midright=(divider + int(train_screen_width * 0.86), text_y_center))
+        minute_rect = minute_surf.get_rect(midright=(divider + int(train_screen_width * 0.865), text_y_center))
 
-    # Blit text surfaces
+    # Compute available width between dest start and minute text
+    dest_x = divider + int(train_screen_width * 0.19)
+    available_width = minute_rect.left - dest_x - 10  # 10px buffer
+
+    # Try decreasing font size until destination fits
+    font_size = font_size_main
+    dest_font = pygame.font.SysFont("helvetica", font_size, bold=True)
+    dest_surf = dest_font.render(destination, True, WHITE)
+
+    if dest_surf.get_width() > available_width and font_size > min_font_size:
+        dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.75), bold=True)
+        dest_surf = dest_font.render(destination, True, WHITE)
+
+    dest_rect = dest_surf.get_rect(midleft=(dest_x, text_y_center))
+
+    # Blit text
     screen.blit(train_surf, train_rect)
     screen.blit(dest_surf, dest_rect)
     screen.blit(minute_surf, minute_rect)
 
-    # Align label (min) so that its bottom matches minute_surf
-    if not minutes_to_arrival == 'now':
+    # Draw "min" label if needed
+    if minutes_to_arrival != 'now':
         label_surf = font_minute.render("min", True, WHITE)
-        label_rect = label_surf.get_rect(midleft=(divider + int(train_screen_width * 0.87), 0))  # Temporary y=0
+        label_rect = label_surf.get_rect(midleft=(divider + int(train_screen_width * 0.87), 0))
         label_rect.bottom = minute_rect.bottom - 2
         screen.blit(label_surf, label_rect)
 
     # Draw bullet image (if it exists)
-    additional_scale_factor = 0.8
     bullet_key = bullet.upper()
+    additional_scale_factor = 0.8
 
     if bullet_key in bullets_dict:
         bullet_image = bullets_dict[bullet_key]
-
-        # Scale bullet image to match train_surf height
         desired_height = additional_scale_factor * train_surf.get_height()
         scale_factor = desired_height / bullet_image.get_height()
         new_width = int(bullet_image.get_width() * scale_factor)
         scaled_bullet = pygame.transform.smoothscale(bullet_image, (new_width, int(desired_height)))
 
-        # Align bullet image just right of train text
         bullet_rect = scaled_bullet.get_rect(midleft=(train_rect.right + 10, train_rect.centery))
         screen.blit(scaled_bullet, bullet_rect)
+
 
 def add_transparent_border(image, padding):
     """Adds a transparent border around the given image."""
@@ -275,3 +287,30 @@ def get_day_type(arrival_timestamp):
         day_type = 'Weekday'
 
     return day_type
+
+def get_train_text(direction, train_feed, curr_train, trips, route_headsigns):
+
+    now = datetime.now().timestamp()
+
+    for train in train_feed.get(direction, []):
+        if train.get('order') == curr_train:
+
+            matching_trip = [
+                trip for trip in trips
+                if trip['route_id'] == train['route_id']
+                and trip['trip_id'] == train['trip_id']
+                and trip['service_id'] == get_day_type(train['arrival_time'])
+            ]
+
+            if len(matching_trip) != 1:
+                destination = route_headsigns[train['route_id']]['N'] + '*'
+            else:
+                destination = matching_trip[0]['trip_headsign']
+
+            train_text = {'train_num': curr_train,
+                          'bullet': train['route_id'],
+                          'arrival_time': train['arrival_time'],
+                          'destination': destination,
+                          'minutes': int((train['arrival_time'] - now) / 60) if (train['arrival_time'] - now) > 30 else 'now'}
+            
+    return train_text

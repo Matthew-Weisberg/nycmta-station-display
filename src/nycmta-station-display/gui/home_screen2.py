@@ -3,7 +3,7 @@ import os
 import csv
 from datetime import datetime
 from collections import defaultdict, Counter
-from gui.gui_utils import crop_transparent_border, draw_banner, draw_train_time, add_transparent_border, get_day_type, Button
+from gui.gui_utils import crop_transparent_border, draw_banner, draw_train_time, add_transparent_border, get_day_type, get_train_text, Button
 from gui.base_screen import BaseScreen 
 
 class HomeScreen2(BaseScreen):
@@ -20,15 +20,17 @@ class HomeScreen2(BaseScreen):
         self.config = config
 
         self.train_feed = train_feed
-        self.num_trains = 3
-        self.curr_train = 1
+        self.num_trains = 4
+        self.curr_train = 2
         self.old_train = 0
-        self.north_text  = {'train_num': "",
+        self.north_next  = {'train_num': "",
                             'bullet': "",
                             'arrival_time': "",
                             'destination': "",
                             'minutes': ""}
-        self.south_text = self.north_text
+        self.south_next = self.north_next
+        self.north_following = self.north_next
+        self.south_following = self.north_next
 
         # Layout constants
         self.BANNER_HEIGHT = int(self.HEIGHT * 0.12)
@@ -45,7 +47,7 @@ class HomeScreen2(BaseScreen):
         self.BORDER_COLOR = (255, 255, 255)
         self.BORDER_THICKNESS = 2
 
-        self.ICON_TRANSPARENT_BORDER = 150
+        self.ICON_TRANSPARENT_BORDER = 15
 
         # Train speed
         self.first_pass = True
@@ -80,9 +82,9 @@ class HomeScreen2(BaseScreen):
             pos=(self.WIDTH - self.BANNER_HEIGHT, 0),  # top-right corner
             size=(self.BANNER_HEIGHT,self.BANNER_HEIGHT),    # square button
             font=None,
-            bg_color=(120, 150, 220),
+            bg_color=self.BANNER_BG,
             text_color=(255, 255, 255),
-            hover_color=(100, 100, 100),
+            hover_color=self.BANNER_BG,
             icon=self.gear_icon  # must be a pygame.Surface
         )
 
@@ -91,7 +93,7 @@ class HomeScreen2(BaseScreen):
 
         # Load icon for banner
         icons_dir = os.path.join(assets_dir, "icons")
-        gear_path = os.path.join(icons_dir, "gear.png")
+        gear_path = os.path.join(icons_dir, "gear_filled.png")
         self.gear_icon = pygame.image.load(gear_path).convert_alpha()
         self.gear_icon = add_transparent_border(self.gear_icon, self.ICON_TRANSPARENT_BORDER)
 
@@ -171,51 +173,14 @@ class HomeScreen2(BaseScreen):
         waiting_frames = self.TRAIN_WAIT_TIME * self.frame_rate
         self.train1_x += pixels_per_frame
         self.train2_x -= pixels_per_frame
-        now = datetime.now().timestamp()
 
         if self.old_train != self.curr_train and self.train1_x < self.divider and self.train1_x + self.train_width > self.WIDTH:
             self.old_train = self.curr_train
 
-            for train in self.train_feed.get('N', []):
-                if train.get('order') == self.curr_train:
-
-                    matching_trip = [
-                        trip for trip in self.trips
-                        if trip['route_id'] == train['route_id']
-                        and trip['trip_id'] == train['trip_id']
-                        and trip['service_id'] == get_day_type(train['arrival_time'])
-                    ]
-
-                    if len(matching_trip) != 1:
-                        destination = self.route_headsigns[train['route_id']]['N'] + '*'
-                    else:
-                        destination = matching_trip[0]['trip_headsign']
-
-                    self.north_text = {'train_num': self.curr_train,
-                                       'bullet': train['route_id'],
-                                       'arrival_time': train['arrival_time'],
-                                       'destination': destination,
-                                       'minutes': int((train['arrival_time'] - now) / 60) if (train['arrival_time'] - now) > 30 else 'now'}
-
-            for train in self.train_feed.get('S', []):
-                if train.get('order') == self.curr_train:
-                    matching_trip = [
-                        trip for trip in self.trips
-                        if trip['route_id'] == train['route_id']
-                        and trip['trip_id'] == train['trip_id']
-                        and trip['service_id'] == get_day_type(train['arrival_time'])
-                    ]
-
-                    if len(matching_trip) != 1:
-                        destination = self.route_headsigns[train['route_id']]['S'] + '*'
-                    else:
-                        destination = matching_trip[0]['trip_headsign']
-
-                    self.south_text = {'train_num': self.curr_train,
-                                       'bullet': train['route_id'],
-                                       'arrival_time': train['arrival_time'],
-                                       'destination': destination,
-                                       'minutes': int((train['arrival_time'] - now) / 60) if (train['arrival_time'] - now) > 30 else 'now'}
+            self.north_next = get_train_text('N', self.train_feed, 1, self.trips, self.route_headsigns)
+            self.south_next = get_train_text('S', self.train_feed, 1, self.trips, self.route_headsigns)
+            self.north_following = get_train_text('N', self.train_feed, self.curr_train, self.trips, self.route_headsigns)
+            self.south_following = get_train_text('S', self.train_feed, self.curr_train, self.trips, self.route_headsigns)
 
         if self.train1_x > self.WIDTH:
             if self.first_pass:
@@ -227,7 +192,7 @@ class HomeScreen2(BaseScreen):
                 self.counter = 0  
                 self.curr_train += 1
                 if self.curr_train > self.num_trains:
-                    self.curr_train = 1 
+                    self.curr_train = 2 
 
     def render(self):
         self.screen.fill(self.SCREEN_BG)
@@ -271,22 +236,44 @@ class HomeScreen2(BaseScreen):
         draw_train_time(screen=self.screen,
                         screen_width=self.WIDTH,
                         train_height=self.train_height,
-                        text_y_center= train1_y + self.train_height // 2,
-                        curr_train=self.north_text['train_num'],
-                        destination=self.north_text['destination'],
-                        minutes_to_arrival=self.north_text['minutes'],
-                        bullet=self.north_text['bullet'],
+                        text_y_center= train1_y + 3 * self.train_height // 10,
+                        curr_train=self.north_next['train_num'],
+                        destination=self.north_next['destination'],
+                        minutes_to_arrival=self.north_next['minutes'],
+                        bullet=self.north_next['bullet'],
                         bullets_dict=self.bullets,
                         divider=self.divider)
         
         draw_train_time(screen=self.screen,
                         screen_width=self.WIDTH,
                         train_height=self.train_height,
-                        text_y_center=train2_y + self.train_height // 2,
-                        curr_train=self.south_text['train_num'],
-                        destination=self.south_text['destination'],
-                        minutes_to_arrival=self.south_text['minutes'],
-                        bullet=self.south_text['bullet'],
+                        text_y_center=train2_y + 3 * self.train_height // 10,
+                        curr_train=self.south_next['train_num'],
+                        destination=self.south_next['destination'],
+                        minutes_to_arrival=self.south_next['minutes'],
+                        bullet=self.south_next['bullet'],
+                        bullets_dict=self.bullets,
+                        divider=self.divider)
+        
+        draw_train_time(screen=self.screen,
+                        screen_width=self.WIDTH,
+                        train_height=self.train_height,
+                        text_y_center= train1_y + 7 * self.train_height // 10,
+                        curr_train=self.north_following['train_num'],
+                        destination=self.north_following['destination'],
+                        minutes_to_arrival=self.north_following['minutes'],
+                        bullet=self.north_following['bullet'],
+                        bullets_dict=self.bullets,
+                        divider=self.divider)
+        
+        draw_train_time(screen=self.screen,
+                        screen_width=self.WIDTH,
+                        train_height=self.train_height,
+                        text_y_center=train2_y + 7 * self.train_height // 10,
+                        curr_train=self.south_following['train_num'],
+                        destination=self.south_following['destination'],
+                        minutes_to_arrival=self.south_following['minutes'],
+                        bullet=self.south_following['bullet'],
                         bullets_dict=self.bullets,
                         divider=self.divider)
         

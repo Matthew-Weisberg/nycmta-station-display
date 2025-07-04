@@ -28,7 +28,7 @@ class BulletSelectScreen(BaseScreen):
 
         self.BULLET_BORDER_PADDING = 20
 
-        self.ICON_TRANSPARENT_BORDER = 180
+        self.ICON_TRANSPARENT_BORDER = 20
 
         # Fonts
         self.banner_font = pygame.font.SysFont("Helvetica", int(self.BANNER_HEIGHT * 0.6))
@@ -45,9 +45,9 @@ class BulletSelectScreen(BaseScreen):
             pos=(self.WIDTH - self.BANNER_HEIGHT, 0),  # top-right corner
             size=(self.BANNER_HEIGHT,self.BANNER_HEIGHT),    # square button
             font=None,
-            bg_color=(150, 150, 150),
+            bg_color=self.BANNER_BG,
             text_color=(255, 255, 255),
-            hover_color=(100, 100, 100),
+            hover_color=self.BANNER_BG,
             icon=self.undo_icon  # must be a pygame.Surface
         )
 
@@ -78,28 +78,30 @@ class BulletSelectScreen(BaseScreen):
             self.bullet_buttons.append([key, btn])
 
         # Arrow Buttons
-        arrow_button_size = (self.BANNER_HEIGHT, self.PAGE_SELECT_BUTTON_HEIGHT)
+        arrow_button_size = (self.PAGE_SELECT_BUTTON_HEIGHT, self.PAGE_SELECT_BUTTON_HEIGHT)
         arrow_y = self.HEIGHT - self.PAGE_SELECT_BUTTON_HEIGHT - self.SPACER
         arrow_padding = self.SPACER
 
         self.left_button = Button(
-            text="<",
+            text=None,
             pos=(arrow_padding, arrow_y),
             size=arrow_button_size,
             font=self.banner_font,
-            bg_color=(80, 80, 80),
+            bg_color=self.SCREEN_BG,
             text_color=(255, 255, 255),
-            hover_color=(50, 50, 50)
+            hover_color=self.SCREEN_BG,
+            icon=self.arrow_icon_left
         )
 
         self.right_button = Button(
-            text=">",
+            text=None,
             pos=(self.WIDTH - arrow_padding - arrow_button_size[0], arrow_y),
             size=arrow_button_size,
             font=self.banner_font,
-            bg_color=(80, 80, 80),
+            bg_color=self.SCREEN_BG,
             text_color=(255, 255, 255),
-            hover_color=(50, 50, 50)
+            hover_color=self.SCREEN_BG,
+            icon=self.arrow_icon_right
         )
 
     def load_images(self):
@@ -111,6 +113,10 @@ class BulletSelectScreen(BaseScreen):
         undo_path = os.path.join(icons_dir, "undo.png")
         self.undo_icon = pygame.image.load(undo_path).convert_alpha()
         self.undo_icon = add_transparent_border(self.undo_icon, self.ICON_TRANSPARENT_BORDER)
+
+        arrow_path = os.path.join(icons_dir, "arrow_subway.png")
+        self.arrow_icon_right = pygame.image.load(arrow_path).convert_alpha()
+        self.arrow_icon_left = pygame.transform.flip(self.arrow_icon_right, True, False)
 
         # Load subway bullets
         bullets_dir = os.path.join(assets_dir, "bullets")

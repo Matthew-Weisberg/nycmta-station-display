@@ -68,9 +68,9 @@ class HomeScreen(BaseScreen):
             pos=(self.WIDTH - self.BANNER_HEIGHT, 0),  # top-right corner
             size=(self.BANNER_HEIGHT,self.BANNER_HEIGHT),    # square button
             font=None,
-            bg_color=(150, 150, 150),
+            bg_color=self.SCREEN_BG,
             text_color=(255, 255, 255),
-            hover_color=(100, 100, 100),
+            hover_color=self.SCREEN_BG,
             icon=self.gear_icon  # must be a pygame.Surface
         )
 
