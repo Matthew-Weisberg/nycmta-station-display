@@ -201,10 +201,11 @@ def draw_train_time(screen,
     # Base font sizes
     font_size_main = int(train_height * 0.25)
     font_size_minute = int(train_height * 0.19)
-    min_font_size = int(font_size_main * 0.6)
 
     font_train_time = pygame.font.SysFont("helvetica", font_size_main, bold=True)
     font_minute = pygame.font.SysFont("helvetica", font_size_minute, bold=True)
+
+    minutes_to_arrival = f' {minutes_to_arrival}' if len(str(minutes_to_arrival)) == 1 else minutes_to_arrival
 
     # Render train and minutes first
     train_surf = font_train_time.render(f"{curr_train}.", True, WHITE)
@@ -213,7 +214,7 @@ def draw_train_time(screen,
     train_rect = train_surf.get_rect(midleft=(divider + int(train_screen_width * 0.03), text_y_center))
 
     if minutes_to_arrival == 'now':
-        minute_rect = minute_surf.get_rect(midright=(divider + int(train_screen_width * 0.90), text_y_center))
+        minute_rect = minute_surf.get_rect(center=(divider + int(train_screen_width * 0.88), text_y_center))
     else:
         minute_rect = minute_surf.get_rect(midright=(divider + int(train_screen_width * 0.865), text_y_center))
 
@@ -226,8 +227,11 @@ def draw_train_time(screen,
     dest_font = pygame.font.SysFont("helvetica", font_size, bold=True)
     dest_surf = dest_font.render(destination, True, WHITE)
 
-    if dest_surf.get_width() > available_width and font_size > min_font_size:
-        dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.75), bold=True)
+    if 0.85 * dest_surf.get_width() > available_width:
+        dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.8), bold=True)
+        dest_surf = dest_font.render(destination, True, WHITE)
+    elif dest_surf.get_width() > available_width:
+        dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.9), bold=True)
         dest_surf = dest_font.render(destination, True, WHITE)
 
     dest_rect = dest_surf.get_rect(midleft=(dest_x, text_y_center))
@@ -246,7 +250,7 @@ def draw_train_time(screen,
 
     # Draw bullet image (if it exists)
     bullet_key = bullet.upper()
-    additional_scale_factor = 0.8
+    additional_scale_factor = 0.9
 
     if bullet_key in bullets_dict:
         bullet_image = bullets_dict[bullet_key]
@@ -257,6 +261,28 @@ def draw_train_time(screen,
 
         bullet_rect = scaled_bullet.get_rect(midleft=(train_rect.right + 10, train_rect.centery))
         screen.blit(scaled_bullet, bullet_rect)
+
+def draw_no_train_time(screen,
+                       screen_width,
+                       train_height,
+                       text_y_center,
+                       curr_train,
+                       divider):
+
+    WHITE = (255, 255, 255) if curr_train == 1 else (200, 200, 200)
+
+    train_screen_width = screen_width - divider
+
+    font_size_main = int(train_height * 0.25)
+
+    font_train_time = pygame.font.SysFont("helvetica", font_size_main, bold=True)
+
+    # Render train and minutes first
+    train_surf = font_train_time.render(f"{curr_train}.  No train info available", True, WHITE)
+    train_rect = train_surf.get_rect(midleft=(divider + int(train_screen_width * 0.03), text_y_center))
+
+    # Blit text
+    screen.blit(train_surf, train_rect)
 
 
 def add_transparent_border(image, padding):
@@ -290,6 +316,8 @@ def get_day_type(arrival_timestamp):
 
 def get_train_text(direction, train_feed, curr_train, trips, route_headsigns):
 
+    train_text = None
+
     now = datetime.now().timestamp()
 
     for train in train_feed.get(direction, []):
@@ -303,7 +331,7 @@ def get_train_text(direction, train_feed, curr_train, trips, route_headsigns):
             ]
 
             if len(matching_trip) != 1:
-                destination = route_headsigns[train['route_id']]['N'] + '*'
+                destination = route_headsigns[train['route_id']][direction] + '*'
             else:
                 destination = matching_trip[0]['trip_headsign']
 

@@ -1,10 +1,9 @@
-import toml
 import os
 import time
 import pygame
-from collections import defaultdict
 from utils import *
 from gui.screen_manager import ScreenManager
+from open_meteo_connector import OpenMeteoConnector
 
 WIDTH, HEIGHT = 800, 480 
 FRAME_RATE = 60
@@ -20,63 +19,23 @@ feed_urls = {
     ("SIR") :                           "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-si"
 }
 
-def load_config():
+
+def main():
     # Build the full path to the config file
     base_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(base_dir, 'config', 'config.toml')
-    if not os.path.exists(config_path):
-        raise FileNotFoundError(f"Missing config file at {config_path}")
-    return toml.load(config_path)
+    config = load_config(config_path)
 
-def write_to_config(key_path, value):
-    """
-    Updates a nested key in config/config.toml using colon-delimited path (e.g., "station:latitude").
-
-    Args:
-        key_path (str): Colon-delimited string representing nested keys.
-        value: The new value to set.
-    """
-    keys = key_path.split(":")
-
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(base_dir, 'config', 'config.toml')
-
-    if not os.path.exists(config_path):
-        raise FileNotFoundError(f"Missing config file at {config_path}")
-
-    # Load existing config
-    config = toml.load(config_path)
-
-    # Traverse to the target nested dictionary
-    d = config
-    for key in keys[:-1]:
-        if key not in d or not isinstance(d[key], dict):
-            d[key] = {}
-        d = d[key]
-
-    # Set the new value
-    d[keys[-1]] = value
-
-    # Write the updated config back to file
-    with open(config_path, 'w') as f:
-        toml.dump(config, f)
-
-def fetch_train_feed(route_id, station_id):
-    for key, value in feed_urls.items():
-        if route_id in key:
-            feed_url = value
-    
-    feed = fetch_feed(feed_url)
-    return extract_trains_for_station(feed, station_id)
-
-def main():
-    config = load_config()
     route_id = config['route']['id']
     station_id = config['station']['id']
-    lat = config['station']['latitude']
-    lon = config['station']['longitude']
 
-    train_feed = fetch_train_feed(route_id, station_id)
+    omc = OpenMeteoConnector(latitude=config['station']['latitude'],
+                             longitude=config['station']['longitude'])
+
+
+    weather_data = omc.get_response()
+
+    train_feed = fetch_train_feed(route_id, station_id, feed_urls)
 
     for direction, entries in train_feed.items():
         print(f"\nDirection {direction}:")
@@ -94,7 +53,8 @@ def main():
     manager = ScreenManager(screen, 
                             frame_rate,
                             train_feed,
-                            config)
+                            config,
+                            weather_data)
     running = True
 
     update_time = 15 # in seconds
@@ -114,16 +74,17 @@ def main():
 
                         write_to_config(key_path, value)
 
-                        config = load_config()
+                        config = load_config(config_path)
                         route_id = config['route']['id']
                         station_id = config['station']['id']
-                        lat = config['station']['latitude']
-                        lon = config['station']['longitude']
+
+                        omc.update_lat_lon(latitude=config['station']['latitude'],
+                                           longitude=config['station']['longitude'])
 
                         counter = update_ticks
 
         if counter >= update_ticks:
-            train_feed = fetch_train_feed(route_id, station_id)
+            train_feed = fetch_train_feed(route_id, station_id, feed_urls)
             counter = 0
 
         manager.update(config, train_feed)

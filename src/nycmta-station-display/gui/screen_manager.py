@@ -6,12 +6,13 @@ from gui.bullet_select_screen import BulletSelectScreen
 from gui.station_select_screen import StationSelectScreen
 
 class ScreenManager:
-    def __init__(self, screen, frame_rate, train_feed, config):
+    def __init__(self, screen, frame_rate, train_feed, config, weather_data):
         self.screen = screen
         self.frame_rate = frame_rate
         self.train_feed = train_feed
         self.config = config
-        self.current_screen = HomeScreen2(screen, frame_rate, train_feed, config)
+        self.weather_data = weather_data
+        self.current_screen = HomeScreen2(screen, frame_rate, train_feed, config, weather_data)
 
     def handle_event(self, event):
         result = self.current_screen.handle_event(event)
@@ -31,7 +32,7 @@ class ScreenManager:
 
     def change_screen(self, screen_name):
         if screen_name == "HomeScreen":
-            self.current_screen = HomeScreen2(self.screen, self.frame_rate, self.train_feed, self.config)
+            self.current_screen = HomeScreen2(self.screen, self.frame_rate, self.train_feed, self.config, self.weather_data)
         elif screen_name == "SettingsScreen":
             self.current_screen = SettingsScreen(self.screen, self.frame_rate)
         elif screen_name == "BulletSelectScreen":
