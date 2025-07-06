@@ -29,7 +29,7 @@ class SettingsScreen(BaseScreen):
         self.ICON_TRANSPARENT_BORDER = 15
 
         # Fonts
-        self.banner_font = pygame.font.SysFont("Helvetica", int(self.BANNER_HEIGHT * 0.6))
+        self.banner_font = pygame.font.SysFont("Calibri", int(self.BANNER_HEIGHT * 0.65))
         self.button_font = pygame.font.SysFont("Helvetica", int(self.BUTTON_HEIGHT * 0.5), bold=True)
 
         # Load and scale images

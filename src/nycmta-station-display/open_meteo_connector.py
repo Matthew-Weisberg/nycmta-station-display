@@ -5,6 +5,7 @@ import pandas as pd
 import requests_cache
 from retry_requests import retry
 from datetime import datetime, timedelta
+import platform
 import pytz
 
 class OpenMeteoConnector():
@@ -27,7 +28,7 @@ class OpenMeteoConnector():
         self.params = {
             "latitude": latitude,
             "longitude": longitude,
-            "daily": "uv_index_max",
+            "daily": ["uv_index_max", "sunset", "sunrise"],
             "hourly": ["weather_code", "temperature_2m", "precipitation_probability"],
             "current": ["temperature_2m", "weather_code", "apparent_temperature", "relative_humidity_2m", "precipitation", "wind_speed_10m"],
             "timezone": timezone,
@@ -145,6 +146,8 @@ class OpenMeteoConnector():
         # Process daily data. The order of variables needs to be the same as requested.
         daily = response.Daily()
         daily_uv_index_max = daily.Variables(0).ValuesAsNumpy()
+        daily_sunset = daily.Variables(1).ValuesInt64AsNumpy()
+        daily_sunrise = daily.Variables(2).ValuesInt64AsNumpy()
 
         daily_data = {"date": pd.date_range(
             start = pd.to_datetime(daily.Time(), unit = "s", utc = True),
@@ -154,8 +157,40 @@ class OpenMeteoConnector():
         )}
 
         daily_data["uv_index_max"] = daily_uv_index_max
+        daily_data["sunset"] = daily_sunset
+        daily_data["sunrise"] = daily_sunrise
 
         daily_dataframe = pd.DataFrame(data = daily_data)
         print(daily_dataframe)
 
-        return [current_data, hourly_dataframe, daily_data]
+        # Determine correct time format string for AM/PM without leading zeros
+        if platform.system() == "Windows":
+            time_fmt = "%#I:%M %p"  # Windows
+        else:
+            time_fmt = "%-I:%M %p"  # macOS/Linux
+
+        # Convert sunrise and sunset from UNIX timestamps to local time
+        sunrise_times = pd.to_datetime(daily_dataframe["sunrise"], unit="s", utc=True).dt.tz_convert(self.params["timezone"])
+        sunset_times = pd.to_datetime(daily_dataframe["sunset"], unit="s", utc=True).dt.tz_convert(self.params["timezone"])
+
+        # Format to "8:57 PM" etc.
+        daily_dataframe["sunrise"] = sunrise_times.dt.strftime(time_fmt)
+        daily_dataframe["sunset"] = sunset_times.dt.strftime(time_fmt)
+
+        # Map UV index to category
+        def uv_category(value):
+            if value < 3:
+                return "LOW"
+            elif value < 6:
+                return "MEDIUM"
+            elif value < 8:
+                return "HIGH"
+            elif value < 11:
+                return "VERY HIGH"
+            else:
+                return "EXTREME"
+
+        daily_dataframe["uv_index_category"] = [uv_category(v) for v in daily_dataframe["uv_index_max"]]
+        print(daily_dataframe)
+
+        return [current_data, hourly_dataframe, daily_dataframe]

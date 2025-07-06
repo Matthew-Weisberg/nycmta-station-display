@@ -40,7 +40,7 @@ class StationSelectScreen(BaseScreen):
         self.CHECK_SIZE_SCALAR = 1.0
 
         # Fonts
-        self.banner_font = pygame.font.SysFont("Helvetica", int(self.BANNER_HEIGHT * 0.6))
+        self.banner_font = pygame.font.SysFont("Calibri", int(self.BANNER_HEIGHT * 0.65))
 
         self.load_images()
         self.station_rows = self.load_stations_for_route_id(route_id)  # now returns a list

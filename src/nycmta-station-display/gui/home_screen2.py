@@ -45,7 +45,7 @@ class HomeScreen2(BaseScreen):
 
         # Colors
         self.SCREEN_BG = (0, 0, 0)
-        self.BANNER_BG = (80, 80, 100)
+        self.BANNER_BG = (30, 70, 100)
         self.BORDER_COLOR = (255, 255, 255)
         self.BORDER_THICKNESS = 2
 
@@ -62,7 +62,7 @@ class HomeScreen2(BaseScreen):
         self.weather_background_rect = pygame.Rect(0, self.BANNER_HEIGHT + self.BORDER_THICKNESS, self.divider, self.HEIGHT - (self.BANNER_HEIGHT + self.BORDER_THICKNESS))
 
         # Fonts
-        self.banner_font = pygame.font.SysFont("Calibri", int(self.BANNER_HEIGHT * 0.65), bold=False)
+        self.banner_font = pygame.font.SysFont("Segoe UI", int(self.BANNER_HEIGHT * 0.60), bold=False)
         self.station_name_font = pygame.font.SysFont("Helvetica", int(self.STATION_NAME_HEIGHT * 0.99), bold=True)
 
         # Load and scale images
@@ -92,6 +92,25 @@ class HomeScreen2(BaseScreen):
         self.WEATHER_ICON_SPLIT = 0.5
         self.TEMP_VALUE_UNIT_SPLIT = 0.7
 
+        self.wpo_conversion = {
+            '53' : '51',
+            '55' : '51',
+            '81' : '80',
+            '82' : '80',
+            '63' : '61',
+            '65' : '61',
+            '57' : '56',
+            '66' : '56',
+            '67' : '56',
+            '77' : '71',
+            '73' : '71',
+            '75' : '71',
+            '86' : '85',
+            '57' : '56',
+            '96' : '95',
+            '99' : '95'
+        }
+
         weather_width_two_column = self.divider - 3 * self.SPACER
         self.weather_icon_size = int(weather_width_two_column * self.WEATHER_ICON_SPLIT)
         self.curr_temp_size = weather_width_two_column - self.weather_icon_size
@@ -105,12 +124,19 @@ class HomeScreen2(BaseScreen):
 
 # =================================================================================
         self.WEATHER_BG = (20, 20, 20)
-        self.weather_image = self.weather_icons[self.weather_current['weather_code']]
+
+        wpo = self.weather_current['weather_code']
+        wpo = self.wpo_conversion.get(wpo, wpo)
+        self.weather_image = self.wpo_icons[wpo]
+
         self.curr_temp = self.weather_current['temperature_2m']
         self.real_feel = self.weather_current['apparent_temperature']
         self.precip = self.weather_current['precipitation']
         self.humid = self.weather_current['relative_humidity_2m']
-        self.uv = 'EXTREME'
+        self.wind = self.weather_current['wind_speed_10m']
+        self.uv = self.weather_daily.at[0, 'uv_index_category']
+        self.sunrise = self.weather_daily.at[0, 'sunrise']
+        self.sunset = self.weather_daily.at[0, 'sunset']
 # =================================================================================
         self.weather_image = add_transparent_border(self.weather_image, 28)
         orig_width, orig_height = self.weather_image.get_size()
@@ -124,6 +150,8 @@ class HomeScreen2(BaseScreen):
         real_feel_font = pygame.font.SysFont("Helvetica", int(self.curr_temp_size * 0.15), bold=False, italic=False)
         stat_desc_font = pygame.font.SysFont("Helvetica", int(self.curr_temp_size * 0.12), bold=False, italic=False)
         curr_stat_font = pygame.font.SysFont("Helvetica", int(self.curr_temp_size * 0.15), bold=False)
+        daily_desc_font = pygame.font.SysFont("Helvetica", int(self.curr_temp_size * 0.11), bold=False, italic=False)
+        daily_value_font = pygame.font.SysFont("Helvetica", int(self.curr_temp_size * 0.13), bold=False)
 
         # CURRENT ------------------------------------------------------
         self.curr_temp_surface = curr_temp_font.render(self.curr_temp, True, (255, 255, 255))
@@ -140,7 +168,7 @@ class HomeScreen2(BaseScreen):
         target_width = int(orig_width * scale_factor)
         target_height = int(self.curr_temp_size * 0.12)
 
-        hourly_precip_icon = pygame.transform.smoothscale(add_transparent_border(self.weather_icons['61'], 30), (target_width, target_height))
+        hourly_precip_icon = pygame.transform.smoothscale(add_transparent_border(self.weather_icons['raindrop'], 30), (target_width, target_height))
         
         orig_width, orig_height = self.weather_image.get_size()
         scale_factor = self.four_col_width / orig_height
@@ -149,8 +177,10 @@ class HomeScreen2(BaseScreen):
 
         for index, row in self.weather_hourly.iterrows():
             hour = curr_stat_font.render(row['hour_label'], True, (255, 255, 255)) 
-
-            icon = self.weather_icons[row['weather_code']]
+            
+            wpo = row['weather_code']
+            wpo = self.wpo_conversion.get(wpo, wpo)
+            icon = self.wpo_icons[wpo]
             icon = pygame.transform.smoothscale(add_transparent_border(icon, HOURLY_TRANSPARENT_BORDER), (target_width, target_height))
 
             temp = stat_desc_font.render(f"{round(row['temperature_2m'])}°F", True, (255, 255, 255)) 
@@ -159,12 +189,22 @@ class HomeScreen2(BaseScreen):
             self.hourly_stats.append([hour, icon, temp, hourly_precip_icon, precip])
 
         # DAY STATS ------------------------------------------------------
-        precip_desc_surface = stat_desc_font.render(f'Precipitation', True, (220, 220, 220))
-        humid_desc_surface = stat_desc_font.render(f'Humidity', True, (220, 220, 220))
-        uv_desc_surface =  stat_desc_font.render(f'UV Index', True, (220, 220, 220))      
-        precip_value_surface = curr_stat_font.render(f'{self.precip}%', True, (255, 255, 255))
-        humid_value_surface = curr_stat_font.render(f'{self.humid}%', True, (255, 255, 255))
-        uv_value_surface =  curr_stat_font.render(f'{self.uv}', True, (255, 255, 255))
+        self.stats_rows = 2
+        self.stats_cols = 3
+
+        precip_desc_surface = daily_desc_font.render(f'Precipitation', True, (220, 220, 220))
+        humid_desc_surface = daily_desc_font.render(f'Humidity', True, (220, 220, 220))
+        uv_desc_surface =  daily_desc_font.render(f'UV Index', True, (220, 220, 220))
+        wind_desc_surface = daily_desc_font.render(f'Wind Speed', True, (220, 220, 220))
+        sunrise_desc_surface = daily_desc_font.render(f'Sunrise', True, (220, 220, 220))
+        sunset_desc_surface =  daily_desc_font.render(f'Sunset', True, (220, 220, 220)) 
+
+        precip_value_surface = daily_value_font.render(f'{self.precip}%', True, (255, 255, 255))
+        humid_value_surface = daily_value_font.render(f'{self.humid}%', True, (255, 255, 255))
+        uv_value_surface =  daily_value_font.render(f'{self.uv}', True, (255, 255, 255))
+        wind_value_surface = daily_value_font.render(f'{self.wind} mph', True, (255, 255, 255))
+        sunrise_value_surface = daily_value_font.render(f'{self.sunrise}', True, (255, 255, 255))
+        sunset_value_surface =  daily_value_font.render(f'{self.sunset}', True, (255, 255, 255))
 
         DAY_STATS_SCALER = 0.6
 
@@ -174,14 +214,21 @@ class HomeScreen2(BaseScreen):
         target_height = int(DAY_STATS_SCALER * self.three_col_width )
 
 
-        precip_icon = pygame.transform.smoothscale(self.weather_icons["61"], (target_width, target_height))
-        humid_icon = pygame.transform.smoothscale(self.weather_icons["61"], (target_width, target_height))
-        uv_icon = pygame.transform.smoothscale(self.weather_icons["0"], (target_width, target_height))
+        precip_icon = pygame.transform.smoothscale(add_transparent_border(self.weather_icons["precipitation"], 2), (target_width, target_height))
+        humid_icon = pygame.transform.smoothscale(add_transparent_border(self.weather_icons["humidity"], 13), (target_width, target_height))
+        uv_icon = pygame.transform.smoothscale(add_transparent_border(self.weather_icons["uv"], 4), (target_width, target_height))
+        wind_icon = pygame.transform.smoothscale(add_transparent_border(self.weather_icons["wind"], 8), (target_width, target_height))
+        sunrise_icon = pygame.transform.smoothscale(add_transparent_border(self.weather_icons["sunrise"], 4), (target_width, target_height))
+        sunset_icon = pygame.transform.smoothscale(add_transparent_border(self.weather_icons["sunset"], 4), (target_width, target_height))
 
-
-        self.curr_stats = [[precip_icon, precip_desc_surface, precip_value_surface],
-                           [humid_icon, humid_desc_surface, humid_value_surface],
-                           [uv_icon, uv_desc_surface, uv_value_surface]]
+        self.curr_stats = [
+            [wind_icon, wind_desc_surface, wind_value_surface],
+            [precip_icon, precip_desc_surface, precip_value_surface],
+            [sunrise_icon, sunrise_desc_surface, sunrise_value_surface],
+            [uv_icon, uv_desc_surface, uv_value_surface],
+            [humid_icon, humid_desc_surface, humid_value_surface],
+            [sunset_icon, sunset_desc_surface, sunset_value_surface]
+        ]
 
     def load_images(self):
         assets_dir = os.path.join(os.path.dirname(__file__), "../../../assets/images")
@@ -224,8 +271,8 @@ class HomeScreen2(BaseScreen):
         else:
             print(f"Subway bullets folder not found: {bullets_dir}")
 
-                # Load subway bullets
-        weather_dir = os.path.join(assets_dir, "weather")
+        # Load subway bullets
+        weather_dir = os.path.join(assets_dir, "weather_icons")
         self.weather_icons = {}  # Dictionary to store bullet images
 
         if os.path.exists(weather_dir):
@@ -240,6 +287,23 @@ class HomeScreen2(BaseScreen):
                         print(f"Failed to load {filename}: {e}")
         else:
             print(f"Subway bullets folder not found: {weather_dir}")
+
+        # Load WPO Icons
+        wpo_directory = os.path.join(assets_dir, "wpo_icons")
+        self.wpo_icons = {}  # Dictionary to store bullet images
+
+        if os.path.exists(wpo_directory):
+            for filename in os.listdir(wpo_directory):
+                if filename.endswith(".png"):
+                    weather_name = os.path.splitext(filename)[0]
+                    weather_path = os.path.join(wpo_directory, filename)
+                    try:
+                        weather_image = pygame.image.load(weather_path).convert_alpha()
+                        self.wpo_icons[weather_name] = weather_image
+                    except pygame.error as e:
+                        print(f"Failed to load {filename}: {e}")
+        else:
+            print(f"Subway bullets folder not found: {wpo_directory}")
             
 
     def load_trips(self):
@@ -429,6 +493,7 @@ class HomeScreen2(BaseScreen):
         self.screen.blit(self.train_flipped, (self.train1_x, train1_y))
         self.screen.blit(self.train_image, (self.train2_x, train2_y))
 
+        # pygame.draw.rect(self.screen, self.WEATHER_BG, self.weather_background_rect)
         pygame.draw.rect(self.screen, self.WEATHER_BG, self.weather_background_rect)
         pygame.draw.line(self.screen, self.BORDER_COLOR, (self.divider, self.BANNER_HEIGHT + self.BORDER_THICKNESS), (self.divider, self.HEIGHT), 1)
 
@@ -472,14 +537,18 @@ class HomeScreen2(BaseScreen):
             precip_rect = precip.get_rect(topleft=(x - 1, hourly_stats_y + self.four_col_width + 14))
             self.screen.blit(precip, precip_rect)
 
+        y = precip_rect.bottom + int(self.SPACER * 1.3)
+
         for i, (icon, desc, stat) in enumerate(self.curr_stats):
-            x = self.SPACER + self.three_col_width // 2 + i * (self.three_col_width + self.SPACER)
             
-            icon_rect = icon.get_rect(midbottom=(x, stat_text_y))
+            x = self.SPACER + self.three_col_width // 2 + (i % self.stats_cols) * (self.three_col_width + self.SPACER)
+            y_top = y + int((i // self.stats_cols) * (self.three_col_width + 1.2 * self.SPACER))
+
+            icon_rect = icon.get_rect(midtop=(x, y_top))
             self.screen.blit(icon, icon_rect)
 
-            desc_rect = desc.get_rect(midtop=(x, stat_text_y))
+            desc_rect = desc.get_rect(midbottom=(x, y_top + self.three_col_width - 8))
             self.screen.blit(desc, desc_rect)
 
-            stat_rect = stat.get_rect(midtop=(x, stat_text_y + 12))
+            stat_rect = stat.get_rect(midtop=(x, y_top + self.three_col_width - 8))
             self.screen.blit(stat, stat_rect)
