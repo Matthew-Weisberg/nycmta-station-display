@@ -3,7 +3,7 @@ import os
 import csv
 from datetime import datetime
 from collections import defaultdict, Counter
-from gui.gui_utils import crop_transparent_border, draw_banner, draw_train_time, draw_no_train_time, add_transparent_border, get_day_type, get_train_text, Button
+from gui.gui_utils import crop_transparent_border, draw_banner, draw_train_time, draw_no_train_time, add_transparent_border, get_train_text, Button
 from gui.base_screen import BaseScreen 
 
 class HomeScreen2(BaseScreen):
@@ -45,7 +45,7 @@ class HomeScreen2(BaseScreen):
 
         # Colors
         self.SCREEN_BG = (0, 0, 0)
-        self.BANNER_BG = (30, 70, 100)
+        self.BANNER_BG = (55, 55, 60)
         self.BORDER_COLOR = (255, 255, 255)
         self.BORDER_THICKNESS = 2
 
@@ -123,7 +123,7 @@ class HomeScreen2(BaseScreen):
         self.four_col_width = weather_width_four_column // 4
 
 # =================================================================================
-        self.WEATHER_BG = (20, 20, 20)
+        self.WEATHER_BG = (25, 25, 25)
 
         wpo = self.weather_current['weather_code']
         wpo = self.wpo_conversion.get(wpo, wpo)
@@ -168,7 +168,7 @@ class HomeScreen2(BaseScreen):
         target_width = int(orig_width * scale_factor)
         target_height = int(self.curr_temp_size * 0.12)
 
-        hourly_precip_icon = pygame.transform.smoothscale(add_transparent_border(self.weather_icons['raindrop'], 30), (target_width, target_height))
+        hourly_precip_icon = pygame.transform.smoothscale(add_transparent_border(self.weather_icons['raindrop'], 20), (target_width, target_height))
         
         orig_width, orig_height = self.weather_image.get_size()
         scale_factor = self.four_col_width / orig_height

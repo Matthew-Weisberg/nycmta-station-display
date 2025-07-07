@@ -18,7 +18,7 @@ class SettingsScreen(BaseScreen):
 
         # Colors
         self.SCREEN_BG = (0, 0, 0)
-        self.BANNER_BG = (40, 40, 40)
+        self.BANNER_BG = (55, 55, 60)
         self.BORDER_COLOR = (255, 255, 255)
         self.BORDER_THICKNESS = 2
         self.BUTTON_BG_COLOR = (20, 20, 20)
@@ -29,7 +29,7 @@ class SettingsScreen(BaseScreen):
         self.ICON_TRANSPARENT_BORDER = 15
 
         # Fonts
-        self.banner_font = pygame.font.SysFont("Calibri", int(self.BANNER_HEIGHT * 0.65))
+        self.banner_font = pygame.font.SysFont("Segoe UI", int(self.BANNER_HEIGHT * 0.60))
         self.button_font = pygame.font.SysFont("Helvetica", int(self.BUTTON_HEIGHT * 0.5), bold=True)
 
         # Load and scale images

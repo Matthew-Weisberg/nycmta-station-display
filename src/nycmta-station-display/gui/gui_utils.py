@@ -196,6 +196,8 @@ def draw_train_time(screen,
 
     WHITE = (255, 255, 255) if curr_train == 1 else (200, 200, 200)
 
+    bullet = bullet.replace("X", "D")
+
     train_screen_width = screen_width - divider
 
     # Base font sizes
@@ -227,11 +229,17 @@ def draw_train_time(screen,
     dest_font = pygame.font.SysFont("helvetica", font_size, bold=True)
     dest_surf = dest_font.render(destination, True, WHITE)
 
-    if 0.85 * dest_surf.get_width() > available_width:
-        dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.8), bold=True)
+    if 0.73 * dest_surf.get_width() > available_width:
+        dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.70), bold=True)
+        dest_surf = dest_font.render(destination, True, WHITE)
+    elif 0.82 * dest_surf.get_width() > available_width:
+        dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.775), bold=True)
+        dest_surf = dest_font.render(destination, True, WHITE)
+    elif 0.91 * dest_surf.get_width() > available_width:
+        dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.85), bold=True)
         dest_surf = dest_font.render(destination, True, WHITE)
     elif dest_surf.get_width() > available_width:
-        dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.9), bold=True)
+        dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.925), bold=True)
         dest_surf = dest_font.render(destination, True, WHITE)
 
     dest_rect = dest_surf.get_rect(midleft=(dest_x, text_y_center))
@@ -250,7 +258,10 @@ def draw_train_time(screen,
 
     # Draw bullet image (if it exists)
     bullet_key = bullet.upper()
-    additional_scale_factor = 0.9
+    if "D" in bullet:
+        additional_scale_factor = 1.05
+    else:
+        additional_scale_factor = 0.9
 
     if bullet_key in bullets_dict:
         bullet_image = bullets_dict[bullet_key]
@@ -259,7 +270,7 @@ def draw_train_time(screen,
         new_width = int(bullet_image.get_width() * scale_factor)
         scaled_bullet = pygame.transform.smoothscale(bullet_image, (new_width, int(desired_height)))
 
-        bullet_rect = scaled_bullet.get_rect(midleft=(train_rect.right + 10, train_rect.centery))
+        bullet_rect = scaled_bullet.get_rect(center=(train_rect.right + 25, train_rect.centery))
         screen.blit(scaled_bullet, bullet_rect)
 
 def draw_no_train_time(screen,

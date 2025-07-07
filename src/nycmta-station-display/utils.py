@@ -6,9 +6,6 @@ import time
 from collections import defaultdict
 
 def load_config(config_path):
-    # Build the full path to the config file
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(base_dir, 'config', 'config.toml')
     if not os.path.exists(config_path):
         raise FileNotFoundError(f"Missing config file at {config_path}")
     return toml.load(config_path)
