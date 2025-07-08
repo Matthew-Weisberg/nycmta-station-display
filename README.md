@@ -4,7 +4,7 @@ Using MTA realtime API to develop raspberry_pi train tracking display
 
 # NYC Subway + Weather Display in Pygame
 
-[![Demo](https://github.com/Matthew-Weisberg/nycmta-station-display/blob/main/MTA_Station_Display.gif))
+![Demo](https://github.com/Matthew-Weisberg/nycmta-station-display/blob/main/MTA_Station_Display.gif)
 
 **A fullscreen Pygame interface that visualizes real-time NYC subway arrivals and current weather conditions using the MTA GTFS-RT feed and the Open-Meteo API.**
 
