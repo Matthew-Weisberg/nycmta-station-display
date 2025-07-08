@@ -1,31 +1,25 @@
-import pygame                 # Import pygame library for GUI and graphics
-import time
-from datetime import datetime # Import datetime to get current date/time
+import pygame                 # Pygame library for GUI and graphics rendering
+import time                   # Time module for timestamp and weekday calculations
+from datetime import datetime # Datetime for getting the current timestamp
 
 # -----------------------------------------------------------------------------------------------------------------
-#   Input:      
-#   Output:     
-#   Desciption: 
+#   Class:      Button
+#   Input:      text (str)                – Label to display on the button (optional if icon is used)
+#               pos (tuple[int, int])     – (x, y) top-left position of the button
+#               size (tuple[int, int])    – Width and height of the button
+#               font (pygame.Font)        – Font used for rendering text
+#               bg_color (tuple[int])     – RGB background color
+#               text_color (tuple[int])   – RGB color for the text
+#               hover_color (tuple[int])  – RGB color for hover state
+#               icon (pygame.Surface)     – Optional icon to display instead of text
+#               border_color (tuple[int]) – RGB color of the border (if any)
+#               border_thickness (int)    – Thickness of the border in pixels
+#               border_sides (list[str])  – List of sides ("top", "bottom", etc.) to show border
+#   Output:     Button object with interactive drawing and hover/click support
+#   Description: Reusable button class that supports hover states, optional icon/text, and borders
 # -----------------------------------------------------------------------------------------------------------------
 
 class Button:
-    # -----------------------------------------------------------------------------------------------------------------
-    #   Class:      Button
-    #   Input:      text (str)                – label to display on the button (optional if icon is used)
-    #               pos (tuple[int, int])     – (x, y) position of the top-left corner
-    #               size (tuple[int, int])    – (width, height) of the button
-    #               font (pygame.Font)        – font object used to render the text
-    #               bg_color (tuple[int])     – background color in RGB
-    #               text_color (tuple[int])   – color of the text in RGB
-    #               hover_color (tuple[int])  – background color when mouse hovers over
-    #               icon (pygame.Surface)     – optional icon image to display (centered)
-    #               border_color (tuple[int]) – RGB color of the border (default: None = no border)
-    #               border_thickness (int)    – thickness of the border lines (default: 0)
-    #               border_sides (list[str])  – sides with borders: "top", "bottom", "left", "right"
-    #   Output:     A button object that can be drawn to screen and respond to mouse/touch events
-    #   Description: A reusable UI component that renders a clickable button with hover effect
-    #                and optional icon support. Works with both mouse and touch screens.
-    # -----------------------------------------------------------------------------------------------------------------
     def __init__(self, text, pos, size, font, bg_color, text_color, hover_color,
                  icon=None, border_color=None, border_thickness=0, border_sides=None):
         self.text = text
@@ -36,7 +30,6 @@ class Button:
         self.text_color = text_color
         self.hover_color = hover_color
         self.icon = icon
-
         self.border_color = border_color
         self.border_thickness = border_thickness
         self.border_sides = border_sides or []
@@ -44,8 +37,8 @@ class Button:
         self.rect = pygame.Rect(pos, size)
         self.hovered = False
 
+        # Render text surface (supporting optional "[left]" flag for alignment)
         if self.text:
-            # Check for special flag to left-align
             if isinstance(self.text, str) and self.text.startswith("[left]"):
                 clean_text = self.text.replace("[left]", "", 1)
                 self.text_surf = self.font.render(clean_text, True, self.text_color)
@@ -57,7 +50,7 @@ class Button:
             self.text_surf = None
             self.text_rect = None
 
-        # Scale icon
+        # Scale and center icon if provided
         if self.icon:
             self.icon = pygame.transform.smoothscale(self.icon, (min(size), min(size)))
             self.icon_rect = self.icon.get_rect(center=self.rect.center)
@@ -65,15 +58,14 @@ class Button:
             self.icon_rect = None
 
     def draw(self, screen):
-        # Draw button background
+        # Draw background based on hover state
         color = self.hover_color if self.hovered else self.bg_color
         pygame.draw.rect(screen, color, self.rect)
 
-        # Draw borders on specified sides
+        # Draw border on specified sides
         if self.border_color and self.border_thickness > 0:
             x, y, w, h = self.rect
             t = self.border_thickness
-
             if "top" in self.border_sides:
                 pygame.draw.rect(screen, self.border_color, (x, y, w, t))
             if "bottom" in self.border_sides:
@@ -90,7 +82,7 @@ class Button:
             screen.blit(self.icon, self.icon_rect)
 
     def handle_event(self, event):
-        # Compatible with touch screens since taps also generate MOUSEBUTTONDOWN events
+        # Update hover state on mouse move; detect click on button
         if event.type == pygame.MOUSEMOTION:
             self.hovered = self.rect.collidepoint(event.pos)
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -98,242 +90,185 @@ class Button:
                 return True
         return False
 
+# -----------------------------------------------------------------------------------------------------------------
+#   Function:   crop_transparent_border
+#   Input:      image (pygame.Surface) – surface that might have transparent padding
+#   Output:     Cropped surface with transparent padding removed
+#   Description: Uses alpha channel to crop out fully transparent edges around image content
+# -----------------------------------------------------------------------------------------------------------------
 def crop_transparent_border(image: pygame.Surface) -> pygame.Surface:
-    # -----------------------------------------------------------------------------------------------------------------
-    #   Function:   crop_transparent_border
-    #   Input:      image (pygame.Surface) – a surface that may contain transparent padding
-    #   Output:     image (pygame.Surface) – a new surface cropped to exclude transparent borders
-    #   Description: Analyzes the alpha channel of the input surface and crops out any fully
-    #                transparent regions around the visible (non-transparent) content. If the
-    #                image is fully transparent, the original surface is returned.
-    # -----------------------------------------------------------------------------------------------------------------
-
-    # Create a mask identifying all non-transparent pixels (alpha > 0)
     mask = pygame.mask.from_surface(image)
-
-    # Get a list of bounding rects (smallest rectangles covering non-transparent areas)
     rect = mask.get_bounding_rects()
-
     if rect:
-        # Use the first bounding rectangle (usually the only one)
-        bounding_rect = rect[0]
+        return image.subsurface(rect[0]).copy()
+    return image
 
-        # Crop the image to this bounding rectangle and return a new surface
-        cropped = image.subsurface(bounding_rect).copy()
-        return cropped
-    else:
-        # The image is fully transparent; return it as-is
-        return image
-    
-def draw_banner(screen,
-    # -----------------------------------------------------------------------------------------------------------------
-    #   Function:   draw_banner
-    #   Inputs:
-    #       screen (pygame.Surface)              – the main display surface to draw the banner on
-    #       screen_width (int)                   – width of the screen in pixels
-    #       banner_height (int)                  – height of the banner in pixels
-    #       banner_font (pygame.font.Font)       – the base font to use for text
-    #       banner_background_color (tuple)      – RGB color for the banner background
-    #       banner_border_color (tuple)          – RGB color for the banner bottom border
-    #       left_text (str)                      – text to display on the left side of the banner
-    #       center_text (str)                    – text to display centered in the banner
-    #       right_text (str)                     – text to display on the right side of the banner
-    #       right_button (Button)                – optional Button object to render at the far right
-    #   Output:     None
-    #   Description: Renders a top banner with optional left, center, and right-aligned text.
-    #                If provided, displays a square button at the far right of the banner.
-    # -----------------------------------------------------------------------------------------------------------------
-                screen_width,
-                banner_height,
-                banner_font,
-                banner_background_color,
-                banner_border_color,
+# -----------------------------------------------------------------------------------------------------------------
+#   Function:   draw_banner
+#   Input:      screen (pygame.Surface), screen_width (int), banner_height (int),
+#               banner_font (pygame.Font), banner_background_color (tuple),
+#               banner_border_color (tuple), banner_border_thickness (int),
+#               left_text (str), center_text (str), right_text (str),
+#               right_button (Button)
+#   Output:     None
+#   Description: Draws a full-width banner at the top with optional aligned text and button
+# -----------------------------------------------------------------------------------------------------------------
+def draw_banner(screen, screen_width, banner_height, banner_font,
+                banner_background_color, banner_border_color,
                 banner_border_thickness=2,
-                left_text="",
-                center_text="",
-                right_text="",
-                right_button=None):
+                left_text="", center_text="", right_text="", right_button=None):
 
     WHITE = (255, 255, 255)
 
-    # Draw banner background
     pygame.draw.rect(screen, banner_background_color, (0, 0, screen_width, banner_height))
-
-    # Draw bottom border line
     pygame.draw.line(screen, banner_border_color, (0, banner_height), (screen_width, banner_height), banner_border_thickness)
 
-    # Adjust width for right button
     button_width = banner_height if right_button else 0
-    
+
+    # Render each text item
     left_surface = banner_font.render(left_text, True, WHITE)
     center_surface = banner_font.render(center_text, True, WHITE)
     right_surface = banner_font.render(right_text, True, WHITE)
 
     y_pos = (banner_height - center_surface.get_height()) // 2
-
-    # Render text
     screen.blit(left_surface, (20, y_pos))
-    center_x = (screen_width - center_surface.get_width()) // 2
-    screen.blit(center_surface, (center_x, y_pos))
-    right_x = screen_width - right_surface.get_width() - button_width - 20
-    screen.blit(right_surface, (right_x, y_pos))
+    screen.blit(center_surface, ((screen_width - center_surface.get_width()) // 2, y_pos))
+    screen.blit(right_surface, (screen_width - right_surface.get_width() - button_width - 20, y_pos))
 
-    # Render right-side button (if present)
+    # Draw right-aligned button if provided
     if right_button:
         right_button.rect.topleft = (screen_width - banner_height, 0)
         right_button.draw(screen)
 
-def draw_train_time(screen,
-                    screen_width,
-                    train_height,
-                    text_y_center,
-                    curr_train,
-                    destination,
-                    minutes_to_arrival,
-                    bullet,
-                    bullets_dict,
-                    divider):
+# -----------------------------------------------------------------------------------------------------------------
+#   Function:   draw_train_time
+#   Input:      screen, screen_width, train_height, text_y_center, curr_train,
+#               destination, minutes_to_arrival, bullet, bullets_dict, divider
+#   Output:     None
+#   Description: Draws one line of train info including destination, time, and bullet image
+# -----------------------------------------------------------------------------------------------------------------
+def draw_train_time(screen, screen_width, train_height, text_y_center,
+                    curr_train, destination, minutes_to_arrival,
+                    bullet, bullets_dict, divider):
 
     WHITE = (255, 255, 255) if curr_train == 1 else (200, 200, 200)
-
-    bullet = bullet.replace("X", "D")
+    bullet = bullet.replace("X", "D")  # Normalize bullet
 
     train_screen_width = screen_width - divider
 
-    # Base font sizes
+    # Calculate font sizes
     font_size_main = int(train_height * 0.25)
     font_size_minute = int(train_height * 0.19)
-
     font_train_time = pygame.font.SysFont("helvetica", font_size_main, bold=True)
     font_minute = pygame.font.SysFont("helvetica", font_size_minute, bold=True)
 
+    # Format minutes
     minutes_to_arrival = f' {minutes_to_arrival}' if len(str(minutes_to_arrival)) == 1 else minutes_to_arrival
 
-    # Render train and minutes first
+    # Render main text surfaces
     train_surf = font_train_time.render(f"{curr_train}.", True, WHITE)
     minute_surf = font_train_time.render(f"{minutes_to_arrival}", True, WHITE)
 
     train_rect = train_surf.get_rect(midleft=(divider + int(train_screen_width * 0.03), text_y_center))
-
     if minutes_to_arrival == 'now':
         minute_rect = minute_surf.get_rect(center=(divider + int(train_screen_width * 0.88), text_y_center))
     else:
         minute_rect = minute_surf.get_rect(midright=(divider + int(train_screen_width * 0.865), text_y_center))
 
-    # Compute available width between dest start and minute text
+    # Adjust font size for destination text to fit space
     dest_x = divider + int(train_screen_width * 0.19)
-    available_width = minute_rect.left - dest_x - 10  # 10px buffer
+    available_width = minute_rect.left - dest_x - 10
 
-    # Try decreasing font size until destination fits
     font_size = font_size_main
     dest_font = pygame.font.SysFont("helvetica", font_size, bold=True)
     dest_surf = dest_font.render(destination, True, WHITE)
 
+    # Shrink text if too wide
     if 0.73 * dest_surf.get_width() > available_width:
         dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.70), bold=True)
-        dest_surf = dest_font.render(destination, True, WHITE)
     elif 0.82 * dest_surf.get_width() > available_width:
         dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.775), bold=True)
-        dest_surf = dest_font.render(destination, True, WHITE)
     elif 0.91 * dest_surf.get_width() > available_width:
         dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.85), bold=True)
-        dest_surf = dest_font.render(destination, True, WHITE)
     elif dest_surf.get_width() > available_width:
         dest_font = pygame.font.SysFont("helvetica", int(font_size_main * 0.925), bold=True)
-        dest_surf = dest_font.render(destination, True, WHITE)
 
+    dest_surf = dest_font.render(destination, True, WHITE)
     dest_rect = dest_surf.get_rect(midleft=(dest_x, text_y_center))
 
-    # Blit text
+    # Draw all surfaces
     screen.blit(train_surf, train_rect)
     screen.blit(dest_surf, dest_rect)
     screen.blit(minute_surf, minute_rect)
 
-    # Draw "min" label if needed
     if minutes_to_arrival != 'now':
         label_surf = font_minute.render("min", True, WHITE)
         label_rect = label_surf.get_rect(midleft=(divider + int(train_screen_width * 0.87), 0))
         label_rect.bottom = minute_rect.bottom - 2
         screen.blit(label_surf, label_rect)
 
-    # Draw bullet image (if it exists)
+    # Draw bullet icon
     bullet_key = bullet.upper()
-    if "D" in bullet:
-        additional_scale_factor = 1.05
-    else:
-        additional_scale_factor = 0.9
-
     if bullet_key in bullets_dict:
         bullet_image = bullets_dict[bullet_key]
-        desired_height = additional_scale_factor * train_surf.get_height()
-        scale_factor = desired_height / bullet_image.get_height()
-        new_width = int(bullet_image.get_width() * scale_factor)
-        scaled_bullet = pygame.transform.smoothscale(bullet_image, (new_width, int(desired_height)))
-
+        scale_factor = (1.05 if "D" in bullet else 0.9)
+        desired_height = scale_factor * train_surf.get_height()
+        scale = desired_height / bullet_image.get_height()
+        scaled_bullet = pygame.transform.smoothscale(bullet_image, (int(bullet_image.get_width() * scale), int(desired_height)))
         bullet_rect = scaled_bullet.get_rect(center=(train_rect.right + 25, train_rect.centery))
         screen.blit(scaled_bullet, bullet_rect)
 
-def draw_no_train_time(screen,
-                       screen_width,
-                       train_height,
-                       text_y_center,
-                       curr_train,
-                       divider):
-
+# -----------------------------------------------------------------------------------------------------------------
+#   Function:   draw_no_train_time
+#   Description: Displays a fallback message when no arrival data is available
+# -----------------------------------------------------------------------------------------------------------------
+def draw_no_train_time(screen, screen_width, train_height, text_y_center, curr_train, divider):
     WHITE = (255, 255, 255) if curr_train == 1 else (200, 200, 200)
-
+    font_size_main = int(train_height * 0.25)
+    font_train_time = pygame.font.SysFont("helvetica", font_size_main, bold=True)
     train_screen_width = screen_width - divider
 
-    font_size_main = int(train_height * 0.25)
-
-    font_train_time = pygame.font.SysFont("helvetica", font_size_main, bold=True)
-
-    # Render train and minutes first
     train_surf = font_train_time.render(f"{curr_train}.  No train info available", True, WHITE)
     train_rect = train_surf.get_rect(midleft=(divider + int(train_screen_width * 0.03), text_y_center))
-
-    # Blit text
     screen.blit(train_surf, train_rect)
 
-
+# -----------------------------------------------------------------------------------------------------------------
+#   Function:   add_transparent_border
+#   Description: Pads a surface with a transparent border
+# -----------------------------------------------------------------------------------------------------------------
 def add_transparent_border(image, padding):
-    """Adds a transparent border around the given image."""
     width, height = image.get_size()
     new_width = width + 2 * padding
     new_height = height + 2 * padding
 
-    # Create a new surface with transparency
     new_image = pygame.Surface((new_width, new_height), pygame.SRCALPHA)
-    new_image.fill((0, 0, 0, 0))  # Fully transparent
-
-    # Blit the original image in the center
+    new_image.fill((0, 0, 0, 0))
     new_image.blit(image, (padding, padding))
-
     return new_image
 
+# -----------------------------------------------------------------------------------------------------------------
+#   Function:   get_day_type
+#   Description: Returns 'Weekday', 'Saturday', or 'Sunday' from a timestamp
+# -----------------------------------------------------------------------------------------------------------------
 def get_day_type(arrival_timestamp):
-    # Get weekday as an integer (0 = Monday, 6 = Sunday)
     weekday_num = time.localtime(arrival_timestamp).tm_wday
-
-    # Convert to 'Weekday', 'Saturday', or 'Sunday'
     if weekday_num == 6:
-        day_type = 'Sunday'
+        return 'Sunday'
     elif weekday_num == 5:
-        day_type = 'Saturday'
+        return 'Saturday'
     else:
-        day_type = 'Weekday'
+        return 'Weekday'
 
-    return day_type
-
+# -----------------------------------------------------------------------------------------------------------------
+#   Function:   get_train_text
+#   Description: Extracts displayable train information from real-time feed
+# -----------------------------------------------------------------------------------------------------------------
 def get_train_text(direction, train_feed, curr_train, trips, route_headsigns):
-
     train_text = None
-
     now = datetime.now().timestamp()
 
     for train in train_feed.get(direction, []):
         if train.get('order') == curr_train:
-
             matching_trip = [
                 trip for trip in trips
                 if trip['route_id'] == train['route_id']
@@ -346,10 +281,14 @@ def get_train_text(direction, train_feed, curr_train, trips, route_headsigns):
             else:
                 destination = matching_trip[0]['trip_headsign']
 
-            train_text = {'train_num': curr_train,
-                          'bullet': train['route_id'],
-                          'arrival_time': train['arrival_time'],
-                          'destination': destination,
-                          'minutes': int((train['arrival_time'] - now) / 60) if (train['arrival_time'] - now) > 30 else 'now'}
-            
+            minutes = int((train['arrival_time'] - now) / 60) if (train['arrival_time'] - now) > 30 else 'now'
+
+            train_text = {
+                'train_num': curr_train,
+                'bullet': train['route_id'],
+                'arrival_time': train['arrival_time'],
+                'destination': destination,
+                'minutes': minutes
+            }
+
     return train_text

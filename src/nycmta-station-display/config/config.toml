@@ -1,12 +1,14 @@
 feed_url = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-g"
 
 [route]
-id = "G"
+id = "2"
 transfers = []
 
 [station]
-id = "G35"
-name = "Clinton-Washington Avs"
-transfers = []
-latitude = 40.6861
-longitude = -73.98
+id = "125"
+name = "59 St-Columbus Circle"
+latitude = "40.768247"
+longitude = "-73.981929"
+
+[transfers]
+stations = "['125', 'A24']"

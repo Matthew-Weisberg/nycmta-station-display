@@ -82,6 +82,8 @@ class StationSelectScreen(BaseScreen):
             btn.route_id = station["route_id"]
             btn.station_name = station['station_name']
             btn.station_id = station["station_id"]
+            btn.station_lat = station['stop_lat']
+            btn.station_lon = station['stop_lon']
             btn.transfer_routes = station["transfer_routes"]
             btn.transfer_station_ids = station["transfer_station_ids"]
 
@@ -217,7 +219,10 @@ class StationSelectScreen(BaseScreen):
                     return ["config", [
                                 f"station:id|{button.station_id}",
                                 f"route:id|{button.route_id}",
-                                f"station:name|{button.station_name}"]
+                                f"station:name|{button.station_name}",
+                                f"station:latitude|{button.station_lat}",
+                                f"station:longitude|{button.station_lon}",
+                                f"transfers:stations|{button.transfer_station_ids}"]
                             ]
 
 

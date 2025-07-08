@@ -63,7 +63,10 @@ class HomeScreen2(BaseScreen):
 
         # Fonts
         self.banner_font = pygame.font.SysFont("Segoe UI", int(self.BANNER_HEIGHT * 0.60), bold=False)
+
         self.station_name_font = pygame.font.SysFont("Helvetica", int(self.STATION_NAME_HEIGHT * 0.99), bold=True)
+
+        self.PAGE_SELECT_BUTTON_HEIGHT = int(self.STATION_NAME_HEIGHT * 0.8)
 
         # Load and scale images
         self.load_images()
@@ -88,6 +91,34 @@ class HomeScreen2(BaseScreen):
             hover_color=self.BANNER_BG,
             icon=self.gear_icon  # must be a pygame.Surface
         )
+
+        # Arrow Buttons
+        arrow_button_size = (self.PAGE_SELECT_BUTTON_HEIGHT, self.PAGE_SELECT_BUTTON_HEIGHT)
+
+        # Desired center y value
+        y = self.BANNER_HEIGHT + self.BORDER_THICKNESS + self.SPACER + self.STATION_NAME_HEIGHT // 2
+        arrow_padding = self.SPACER
+
+        # Initial top-left guess for button (y will be corrected)
+        self.next_station_button = Button(
+            text=None,
+            pos=(self.WIDTH - arrow_padding - arrow_button_size[0], 0),  # y is temporary
+            size=arrow_button_size,
+            font=self.banner_font,
+            bg_color=self.SCREEN_BG,
+            text_color=(255, 255, 255),
+            hover_color=self.SCREEN_BG,
+            icon=self.arrow_icon_right
+        )
+
+        # Vertically center the button at your desired y
+        self.next_station_button.rect.centery = y
+
+        # Recenter the icon inside the button (if needed)
+        if self.next_station_button.icon_rect:
+            self.next_station_button.icon_rect.center = self.next_station_button.rect.center
+
+# ============================================================================
 
         self.WEATHER_ICON_SPLIT = 0.5
         self.TEMP_VALUE_UNIT_SPLIT = 0.7
@@ -239,6 +270,10 @@ class HomeScreen2(BaseScreen):
         self.gear_icon = pygame.image.load(gear_path).convert_alpha()
         self.gear_icon = add_transparent_border(self.gear_icon, self.ICON_TRANSPARENT_BORDER)
 
+        # load icon for next progressing to next station
+        arrow_path = os.path.join(icons_dir, "arrow_subway.png")
+        self.arrow_icon_right = pygame.image.load(arrow_path).convert_alpha()
+
         # Load train image 
         train_path = os.path.join(assets_dir, "r211.png")
         train_image = pygame.image.load(train_path).convert_alpha()
@@ -341,6 +376,14 @@ class HomeScreen2(BaseScreen):
     def handle_event(self, event):
         if self.settings_button.handle_event(event):
             return "goto:SettingsScreen"
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = event.pos
+            # Check for page arrows
+            if self.next_station_button.rect.collidepoint(mouse_pos):
+                print("button_pressed")
+                return None
+
         return None
 
     def update(self):
@@ -492,6 +535,10 @@ class HomeScreen2(BaseScreen):
         # --- Draw trains on top ---
         self.screen.blit(self.train_flipped, (self.train1_x, train1_y))
         self.screen.blit(self.train_image, (self.train2_x, train2_y))
+
+        # --- Draw next station button ---
+        self.next_station_button.hovered = self.next_station_button.rect.collidepoint(pygame.mouse.get_pos())
+        self.next_station_button.draw(self.screen)
 
         # pygame.draw.rect(self.screen, self.WEATHER_BG, self.weather_background_rect)
         pygame.draw.rect(self.screen, self.WEATHER_BG, self.weather_background_rect)
